@@ -338,6 +338,10 @@ async function changeModel(modelId) {
   updateStatus('Loading model...');
   updateProgressBar(0);
 
+  const loadModelButton = document.getElementById('load-model');
+  loadModelButton.textContent = 'Load Model';
+  loadModelButton.disabled = false;
+
   try {
     saveConfig({ modelId });
     currentModelId = modelId;
