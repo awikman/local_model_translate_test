@@ -1,5 +1,5 @@
 import { Plugin } from 'ckeditor5';
-import { ButtonView, createDropdown } from 'ckeditor5';
+import { createDropdown, ButtonView } from 'ckeditor5';
 import { getLanguageName } from '../../utils/models.js';
 import { getSourceLanguage } from '../../utils/storage.js';
 import { log } from '../../utils/logger.js';
@@ -14,21 +14,18 @@ export default class TranslationUI extends Plugin {
 
     editor.ui.componentFactory.add('translateButton', locale => {
       const dropdownView = createDropdown(locale);
-      const buttonView = dropdownView.buttonView;
 
-      buttonView.set({
+      dropdownView.buttonView.set({
         label: 'Translate',
         tooltip: 'Translate to selected language',
-        icon: this._getTranslateIcon()
+        withText: false
       });
+
+      dropdownView.buttonView.icon = this._getTranslateIcon();
 
       dropdownView.isEnabled = true;
 
       this._addLanguageOptions(dropdownView, locale, editor);
-
-      buttonView.on('execute', () => {
-        dropdownView.isOpen = !dropdownView.isOpen;
-      });
 
       return dropdownView;
     });
@@ -44,14 +41,15 @@ export default class TranslationUI extends Plugin {
         const label = targetCode.toUpperCase() + ' - ' + langName;
 
         const button = new ButtonView(locale);
-        button.set({
-          label: label,
-          withText: true
-        });
+
+        button.label = label;
+        button.withText = true;
+        button.tooltip = `Translate to ${langName}`;
 
         button.on('execute', () => {
           log('Translate to:', targetCode);
           editor.execute('translate', { targetLanguage: targetCode });
+
         });
 
         dropdownView.panelView.children.add(button);
