@@ -11,7 +11,7 @@ import sys
 import mimetypes
 from pathlib import Path
 
-PORT = 8000
+PORT = 8001
 
 print("[DEBUG] server.py imported")
 print("[DEBUG] Python version:", sys.version)
@@ -28,13 +28,14 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         content_type = self.guess_type(self.path)
 
-        if content_type:
-            self.send_header('Content-Type', content_type)
-
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
 
+        print(f"[DEBUG] Serving {self.path} as {content_type}")
         super().end_headers()
 
     def guess_type(self, path):
