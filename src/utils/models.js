@@ -26,12 +26,6 @@ export const MODELS = [
         name: 'Small (~300MB)',
         modelId: 'Xenova/m2m100_418M',
         description: 'Good for 100+ languages, very efficient'
-      },
-      {
-        id: 'medium',
-        name: 'Medium (~800MB)',
-        modelId: 'Xenova/m2m100_1.2B',
-        description: 'Strong multilingual support'
       }
     ]
   },
