@@ -96,9 +96,8 @@
 
     <main class="editor-container">
       <div class="demo-warning">
-        <strong>Proof of Concept Demo:</strong> This loads an AI translation model directly in your browser. 
-        Large models may use significant memory and could slow or crash your browser. 
-        Start with small models and save your work first.
+        <strong>Warning:</strong> This loads an AI translation model directly in your browser. 
+        Large models may use significant memory and could slow or crash your browser.
       </div>
 
       <div id="editor-container"></div>
@@ -127,7 +126,7 @@
         <strong>About This Demo</strong>
         <p>This is a proof-of-concept CKEditor5 plugin that runs translation models 100% in-browser using WebGPU and WebAssembly via transformers.js. <b>No API requests are sent to any server—all processing happens locally on your device.</b></p>
         <p>Models are downloaded from Hugging Face on first use. Translation quality and speed depend on your device's capabilities and the selected model variant.</p>
-        <p><b>Warning:</b> Translation models can consume significant memory (several hundred MB to over 2GB). If you experience browser slowdowns or crashes, try a smaller model variant or restart the browser.</p>
+        <p><b>Warning:</b> Translation models can consume significant memory (several hundred MB or even several GB). If you experience browser slowdowns or crashes, try a smaller model variant or restart the browser.</p>
         <p>This project demonstrates the feasibility of local, privacy-preserving translation directly in the browser without relying on external translation services.</p>
       </div>
     </main>
