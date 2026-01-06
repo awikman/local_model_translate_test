@@ -124,9 +124,10 @@
       </div>
       <div class="demo-info">
         <strong>About This Demo</strong>
-        <p>This is a proof-of-concept CKEditor5 plugin that runs translation models 100% in-browser using WebGPU and WebAssembly via transformers.js. <b>No API requests are sent to any server—all processing happens locally on your device.</b></p>
+        <p>This is a proof-of-concept CKEditor5 plugin that runs translation models <b>100% in your browser</b> using WebGPU and WebAssembly via transformers.js. <b>No API requests are sent to any server—all processing happens locally on your device.</b></p>
         <p>Models are downloaded from Hugging Face on first use. Translation quality and speed depend on your device's capabilities and the selected model variant.</p>
         <p><b>Warning:</b> Translation models can consume significant memory (several hundred MB or even several GB). If you experience browser slowdowns or crashes, try a smaller model variant or restart the browser.</p>
+        <p><b>Security Note:</b> This demo has an XSS vulnerability. The translation model's output is inserted directly into the editor without sanitization.</p>
         <p>WebGPU provides GPU acceleration when supported by the browser. Models are downloaded from Hugging Face and cached in the browser for subsequent use.</p>
         <p>This project demonstrates the feasibility of local, privacy-preserving translation directly in the browser without relying on external translation services.</p>
       </div>
