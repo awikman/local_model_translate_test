@@ -177,14 +177,14 @@ async function initializeEditor() {
 function setupTranslationEventListeners() {
   window.addEventListener('translation-progress', (e) => {
     const { percentage, progress } = e.detail;
-    const clampedPercentage = (percentage !== null && !isNaN(percentage)) 
-      ? Math.min(100, Math.max(0, percentage)) 
-      : null;
-    updateProgressBar(clampedPercentage, progress);
-    if (clampedPercentage !== null) {
-      updateStatus(`Loading model: ${clampedPercentage}%`);
+    console.log('[DEBUG] translation-progress received:', { percentage, progress });
+    updateProgressBar(percentage, progress);
+    const fileName = progress.file ? progress.file.split('/').pop() : '';
+    if (progress.status === 'progress' && progress.loaded && progress.total) {
+      const filePercent = Math.round((progress.loaded / progress.total) * 100);
+      updateStatus(`Downloading ${fileName}: ${filePercent}%`);
     } else if (progress.status) {
-      updateStatus(`Loading: ${progress.status}...`);
+      updateStatus(`${progress.status}: ${fileName}`);
     } else {
       updateStatus('Loading model...');
     }
@@ -304,10 +304,19 @@ function updateProgressBar(percentage, progress = null) {
   const progressBar = document.getElementById('progress-bar');
   const progressText = document.getElementById('progress-text');
 
+  console.log('[DEBUG] updateProgressBar called:', { percentage, progress });
+
   if (percentage !== null && !isNaN(percentage)) {
-    const clampedPercentage = Math.min(100, Math.max(0, percentage));
-    progressBar.style.width = `${clampedPercentage}%`;
-    progressText.textContent = `${clampedPercentage}%`;
+    console.log('[DEBUG] Using percentage parameter:', percentage);
+    const clamped = Math.min(100, Math.max(0, percentage));
+    progressBar.style.width = `${clamped}%`;
+    progressText.textContent = `${clamped}%`;
+    progressBar.classList.remove('loading');
+  } else if (progress && progress.status === 'progress' && progress.loaded && progress.total) {
+    const filePercent = Math.round((progress.loaded / progress.total) * 100);
+    console.log('[DEBUG] filePercent calculated from progress:', filePercent);
+    progressBar.style.width = `${filePercent}%`;
+    progressText.textContent = `${filePercent}%`;
     progressBar.classList.remove('loading');
   } else {
     progressBar.style.width = '100%';
@@ -316,7 +325,7 @@ function updateProgressBar(percentage, progress = null) {
   }
 
   if (progress && progress.status) {
-    log('Progress:', progress.status, percentage !== null ? `${percentage}%` : '');
+    log('Progress:', progress.status);
   }
 }
 

@@ -31,20 +31,33 @@ export class TranslationService {
   }
 
   _calculateOverallProgress(progress) {
+    console.log('[DEBUG] _calculateOverallProgress called:', progress);
+    
     if (progress.status === 'progress' && progress.file && progress.total) {
+      console.log('[DEBUG] progress event with file and total:', progress.file, progress.loaded, '/', progress.total);
+      
       if (!this.fileProgress[progress.file]) {
         this.fileProgress[progress.file] = { loaded: 0, total: progress.total };
-        this.totalBytesToLoad += progress.total;
       }
       const prevLoaded = this.fileProgress[progress.file].loaded;
       this.fileProgress[progress.file].loaded = progress.loaded;
-      this.bytesLoaded += (progress.loaded - prevLoaded);
-    }
 
-    if (this.totalBytesToLoad > 0) {
-      const percentage = Math.round((this.bytesLoaded / this.totalBytesToLoad) * 100);
-      return Math.min(100, Math.max(0, percentage));
+      const filePercent = Math.round((progress.loaded / progress.total) * 100);
+      console.log('[DEBUG] filePercent:', filePercent);
+      
+      this.bytesLoaded += (progress.loaded - prevLoaded);
+      console.log('[DEBUG] bytesLoaded:', this.bytesLoaded, 'totalBytesToLoad:', this.totalBytesToLoad);
+
+      if (this.totalBytesToLoad > 0) {
+        const overallProgress = Math.round((this.bytesLoaded / this.totalBytesToLoad) * 100);
+        console.log('[DEBUG] overallProgress:', overallProgress);
+        return overallProgress;
+      }
+
+      console.log('[DEBUG] returning filePercent:', filePercent);
+      return filePercent;
     }
+    console.log('[DEBUG] returning null - no progress calculation');
     return null;
   }
 
@@ -70,10 +83,12 @@ export class TranslationService {
     this.fileProgress = {};
 
     if (this.progressCallback) {
+      console.log('[DEBUG] Sending initial 0% progress');
       this.progressCallback(0, { status: 'loading', name: modelId });
     }
 
     const startTime = startTimer('load-model');
+    console.log('[DEBUG] loadModel started for:', modelId);
 
     try {
       log('Loading model:', modelId);
@@ -83,6 +98,7 @@ export class TranslationService {
         progress_callback: (progress) => {
           if (this.progressCallback) {
             const percentage = this._calculateOverallProgress(progress);
+            console.log('[DEBUG] Calling progressCallback with:', { percentage, progress });
             this.progressCallback(percentage, progress);
           }
         },
