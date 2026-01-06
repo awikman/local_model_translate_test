@@ -11,7 +11,7 @@ import sys
 import mimetypes
 from pathlib import Path
 
-PORT = 8001
+PORT = 8000
 
 print("[DEBUG] server.py imported")
 print("[DEBUG] Python version:", sys.version)

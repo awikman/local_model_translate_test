@@ -8,6 +8,9 @@ export class TranslationService {
     this.currentModelId = null;
     this.isLoading = false;
     this.progressCallback = null;
+    this.totalBytesToLoad = 0;
+    this.bytesLoaded = 0;
+    this.fileProgress = {};
 
     // Use pipeline from window scope (loaded in HTML)
     if (typeof window.transformersPipeline !== 'function') {
@@ -27,6 +30,24 @@ export class TranslationService {
     this.progressCallback = callback;
   }
 
+  _calculateOverallProgress(progress) {
+    if (progress.status === 'progress' && progress.file && progress.total) {
+      if (!this.fileProgress[progress.file]) {
+        this.fileProgress[progress.file] = { loaded: 0, total: progress.total };
+        this.totalBytesToLoad += progress.total;
+      }
+      const prevLoaded = this.fileProgress[progress.file].loaded;
+      this.fileProgress[progress.file].loaded = progress.loaded;
+      this.bytesLoaded += (progress.loaded - prevLoaded);
+    }
+
+    if (this.totalBytesToLoad > 0) {
+      const percentage = Math.round((this.bytesLoaded / this.totalBytesToLoad) * 100);
+      return Math.min(100, Math.max(0, percentage));
+    }
+    return null;
+  }
+
   async loadModel(modelId) {
     if (this.pipeline && this.currentModelId === modelId) {
       log('Model already loaded:', modelId);
@@ -44,6 +65,14 @@ export class TranslationService {
     }
 
     this.isLoading = true;
+    this.totalBytesToLoad = 0;
+    this.bytesLoaded = 0;
+    this.fileProgress = {};
+
+    if (this.progressCallback) {
+      this.progressCallback(0, { status: 'loading', name: modelId });
+    }
+
     const startTime = startTimer('load-model');
 
     try {
@@ -53,13 +82,17 @@ export class TranslationService {
       this.pipeline = await pipeline('translation', modelId, {
         progress_callback: (progress) => {
           if (this.progressCallback) {
-            const percentage = progress.progress !== undefined ? Math.round(progress.progress * 100) : null;
+            const percentage = this._calculateOverallProgress(progress);
             this.progressCallback(percentage, progress);
           }
         },
         device: 'webgpu',
         dtype: 'q4'
       });
+
+      if (this.progressCallback) {
+        this.progressCallback(100, { status: 'ready', name: modelId });
+      }
 
       this.currentModelId = modelId;
       this.isLoading = false;

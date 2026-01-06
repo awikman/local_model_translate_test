@@ -177,11 +177,14 @@ async function initializeEditor() {
 function setupTranslationEventListeners() {
   window.addEventListener('translation-progress', (e) => {
     const { percentage, progress } = e.detail;
-    updateProgressBar(percentage, progress);
-    if (progress.status) {
+    const clampedPercentage = (percentage !== null && !isNaN(percentage)) 
+      ? Math.min(100, Math.max(0, percentage)) 
+      : null;
+    updateProgressBar(clampedPercentage, progress);
+    if (clampedPercentage !== null) {
+      updateStatus(`Loading model: ${clampedPercentage}%`);
+    } else if (progress.status) {
       updateStatus(`Loading: ${progress.status}...`);
-    } else if (percentage !== null) {
-      updateStatus(`Loading model: ${percentage}%`);
     } else {
       updateStatus('Loading model...');
     }
@@ -302,8 +305,9 @@ function updateProgressBar(percentage, progress = null) {
   const progressText = document.getElementById('progress-text');
 
   if (percentage !== null && !isNaN(percentage)) {
-    progressBar.style.width = `${percentage}%`;
-    progressText.textContent = `${percentage}%`;
+    const clampedPercentage = Math.min(100, Math.max(0, percentage));
+    progressBar.style.width = `${clampedPercentage}%`;
+    progressText.textContent = `${clampedPercentage}%`;
     progressBar.classList.remove('loading');
   } else {
     progressBar.style.width = '100%';
