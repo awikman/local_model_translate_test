@@ -152,18 +152,20 @@ export default class TranslateCommand extends Command {
     console.log('[DEBUG] Translation result:', translated.substring(0, 50));
 
     if (shouldTranslateAll) {
-      console.log('[DEBUG] SHOULD_REPLACE_ALL - About to insert translated HTML');
+      console.log('[DEBUG] SHOULD_REPLACE_ALL - About to call setData');
       console.log('[DEBUG] Current editor content:', editor.getData().substring(0, 100));
       console.log('[DEBUG] Setting new content to:', translated.substring(0, 100));
-      
-      const modelFragment = editor.data.parse(translated);
-      editor.model.insertContent(modelFragment);
-      
-      console.log('[DEBUG] After insertContent, editor content:', editor.getData().substring(0, 100));
+      editor.setData(translated);
+      console.log('[DEBUG] After setData, editor content:', editor.getData().substring(0, 100));
     } else {
       console.log('[DEBUG] Inserting translated content at selection');
+      editor.model.change(writer => {
+        for (const range of ranges) {
+          writer.remove(range);
+        }
+      });
       const modelFragment = editor.data.parse(translated);
-      editor.model.insertContent(modelFragment, ranges[0]);
+      editor.model.insertContent(modelFragment, ranges[0].start);
     }
   }
 }
