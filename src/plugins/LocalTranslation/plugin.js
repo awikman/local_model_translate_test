@@ -50,6 +50,9 @@ export default class LocalTranslation extends Plugin {
 
     await this.translationService.loadModel(targetModel);
 
+    this.editor.commands.get('translate').refresh();
+    log('Translate command refreshed after model load');
+
     window.dispatchEvent(new CustomEvent('translation-ready', {
       detail: { modelId: targetModel }
     }));

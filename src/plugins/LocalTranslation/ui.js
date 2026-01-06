@@ -26,6 +26,20 @@ export default class TranslationUI extends Plugin {
 
       dropdownView.bind('isEnabled').to(translateCommand, 'isEnabled');
 
+      const updateTooltip = () => {
+        if (translateCommand.isEnabled) {
+          dropdownView.buttonView.tooltip = 'Translate to selected language';
+        } else if (translateCommand.isTranslating) {
+          dropdownView.buttonView.tooltip = 'Translating...';
+        } else {
+          dropdownView.buttonView.tooltip = 'Load model first (click "Load Model" button)';
+        }
+      };
+
+      updateTooltip();
+
+      window.addEventListener('translation-status', updateTooltip);
+
       this._addLanguageOptions(dropdownView, locale, editor, translateCommand);
 
       return dropdownView;
