@@ -121,8 +121,6 @@ export default class TranslateCommand extends Command {
       console.log('[DEBUG] No selection, translating full content');
       textToTranslate = editor.getData();
       console.log('[DEBUG] Raw textToTranslate:', textToTranslate.substring(0, 50));
-      textToTranslate = textToTranslate.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-      console.log('[DEBUG] Cleaned textToTranslate:', textToTranslate.substring(0, 50));
       shouldTranslateAll = true;
       console.log('[DEBUG] shouldTranslateAll set to:', shouldTranslateAll);
     } else {
@@ -139,7 +137,7 @@ export default class TranslateCommand extends Command {
         }
       } else {
         const htmlContent = editor.getData();
-        textToTranslate = htmlContent.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+        textToTranslate = htmlContent;
       }
     }
 
@@ -154,18 +152,18 @@ export default class TranslateCommand extends Command {
     console.log('[DEBUG] Translation result:', translated.substring(0, 50));
 
     if (shouldTranslateAll) {
-      console.log('[DEBUG] SHOULD_REPLACE_ALL - About to call setData');
+      console.log('[DEBUG] SHOULD_REPLACE_ALL - About to insert translated HTML');
       console.log('[DEBUG] Current editor content:', editor.getData().substring(0, 100));
-      console.log('[DEBUG] Setting new content to:', `<p>${translated}</p>`.substring(0, 100));
-      editor.setData(`<p>${translated}</p>`);
-      console.log('[DEBUG] After setData, editor content:', editor.getData().substring(0, 100));
+      console.log('[DEBUG] Setting new content to:', translated.substring(0, 100));
+      
+      const modelFragment = editor.data.parse(translated);
+      editor.model.insertContent(modelFragment);
+      
+      console.log('[DEBUG] After insertContent, editor content:', editor.getData().substring(0, 100));
     } else {
-      editor.model.change(writer => {
-        for (const range of ranges) {
-          writer.remove(range);
-        }
-        writer.insert(writer.createText(translated), ranges[0].start);
-      });
+      console.log('[DEBUG] Inserting translated content at selection');
+      const modelFragment = editor.data.parse(translated);
+      editor.model.insertContent(modelFragment, ranges[0]);
     }
   }
 }
