@@ -36,6 +36,14 @@ body {
   margin-bottom: 4px;
 }
 
+.demo-info p {
+  margin-bottom: 8px;
+}
+
+.demo-info p:last-child {
+  margin-bottom: 0;
+}
+
 .demo-container {
   display: flex;
   height: 100vh;
