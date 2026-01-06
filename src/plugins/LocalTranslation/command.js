@@ -1,5 +1,6 @@
 import { Command } from 'ckeditor5';
 import { log } from '../../utils/logger.js';
+import { getSourceLanguage } from '../../utils/storage.js';
 
 export default class TranslateCommand extends Command {
   constructor(editor, translationService) {
@@ -30,6 +31,8 @@ export default class TranslateCommand extends Command {
       throw new Error('Translation model not ready. Click "Load Model" button.');
     }
 
+    const sourceLanguage = getSourceLanguage();
+
     model.change(writer => {
       const selectedRanges = selection.getSelectedRanges();
 
@@ -53,7 +56,7 @@ export default class TranslateCommand extends Command {
       const fullText = this.editor.getData();
       const cleanText = fullText.replace(/\[Translating\.\.\.\]/g, '');
 
-      const translatedText = await this.translationService.translate(cleanText, targetLanguage);
+      const translatedText = await this.translationService.translate(cleanText, targetLanguage, sourceLanguage);
 
       model.change(writer => {
         const selection = model.document.selection;

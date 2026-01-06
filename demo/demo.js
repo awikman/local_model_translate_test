@@ -248,6 +248,48 @@ function setupEventListeners() {
     }
   });
 
+  const testButton = document.getElementById('test-translation');
+  const testResult = document.getElementById('test-result');
+  
+  testButton.addEventListener('click', async () => {
+    const sourceLangSelect = document.getElementById('source-language');
+    const sourceLang = sourceLangSelect ? sourceLangSelect.value : 'en';
+    const targetLang = sourceLang === 'en' ? 'fi' : 'en';
+    const testText = 'Translate this text';
+    
+    console.log('[DEBUG] Test button clicked:', { sourceLang, targetLang, testText });
+    
+    testResult.innerHTML = 'Translating...';
+    testResult.className = 'test-result loading';
+    
+    try {
+      const plugin = editor.plugins.get('LocalTranslation');
+      const service = plugin.getService();
+      
+      console.log('[DEBUG] Service ready:', service.isReady());
+      
+      if (!service.isReady()) {
+        throw new Error('Model not loaded. Click "Load Model" first.');
+      }
+      
+      const translated = await service.translate(testText, targetLang, sourceLang);
+      
+      const sourceDisplay = sourceLang.toUpperCase();
+      const targetDisplay = targetLang.toUpperCase();
+      
+      testResult.innerHTML = `
+        <strong>Test executed. From ${sourceDisplay} to ${targetDisplay}:</strong><br/>
+        Source: "${testText}"<br/>
+        Translation: "${translated}"
+      `;
+      testResult.className = 'test-result';
+    } catch (error) {
+      console.error('[Demo] Test translation error:', error);
+      testResult.innerHTML = `<strong>Error:</strong> ${error.message}`;
+      testResult.className = 'test-result error';
+    }
+  });
+
   window.addEventListener('translation-ready', (e) => {
     const { modelId } = e.detail;
     updateStatus('Ready - Model loaded');

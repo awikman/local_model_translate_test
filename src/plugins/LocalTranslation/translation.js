@@ -1,5 +1,19 @@
 import { log, startTimer, endTimer } from '../../utils/logger.js';
 
+const NLLB_LANGUAGE_CODES = {
+  'en': 'eng_Latn',
+  'fi': 'fin_Latn',
+  'sv': 'swe_Latn',
+  'no': 'nor_Latn',
+  'da': 'dan_Latn',
+  'de': 'deu_Latn',
+  'fr': 'fra_Latn'
+};
+
+function toNLLBCode(code) {
+  return NLLB_LANGUAGE_CODES[code] || code;
+}
+
 export class TranslationService {
   static instance = null;
 
@@ -111,19 +125,27 @@ export class TranslationService {
     }
   }
 
-  async translate(text, targetLanguage) {
+  async translate(text, targetLanguage, sourceLanguage = 'eng_Latn') {
+    console.log('[DEBUG] translate called with:', { text, targetLanguage, sourceLanguage });
+    
     if (!this.pipeline) {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
 
-    const startTime = startTimer('translate');
-    log('Translating', text.length, 'chars to', targetLanguage);
+    const nllbTargetLang = toNLLBCode(targetLanguage);
+    const nllbSourceLang = toNLLBCode(sourceLanguage);
+    console.log('[DEBUG] NLLB langs:', { source: nllbSourceLang, target: nllbTargetLang });
+    
+    log('Translating', text.length, 'chars from', sourceLanguage, 'to', targetLanguage);
 
     try {
+      console.log('[DEBUG] Calling pipeline...');
+      const startTime = startTimer('translate');
       const result = await this.pipeline(text, {
-        target_lang: targetLanguage,
-        max_length: 512
+        src_lang: nllbSourceLang,
+        tgt_lang: nllbTargetLang
       });
+      console.log('[DEBUG] Pipeline result:', result);
 
       const duration = endTimer('translate', startTime);
       log('Translation complete in', duration, 'ms');

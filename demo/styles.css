@@ -215,3 +215,23 @@ button.secondary:hover {
   margin-top: 20px;
   line-height: 1.6;
 }
+
+.test-result {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.test-result.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.test-result.loading {
+  background: #fff3cd;
+  color: #856404;
+}
