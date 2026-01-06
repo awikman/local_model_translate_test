@@ -12,7 +12,9 @@ export default class TranslationUI extends Plugin {
     const editor = this.editor;
 
     editor.ui.componentFactory.add('translateButton', locale => {
+      console.log('[UI] Creating translateButton dropdown');
       const dropdownView = createDropdown(locale);
+      const translateCommand = editor.commands.get('translate');
 
       dropdownView.buttonView.set({
         label: 'Translate',
@@ -22,15 +24,15 @@ export default class TranslationUI extends Plugin {
 
       dropdownView.buttonView.icon = this._getTranslateIcon();
 
-      dropdownView.isEnabled = true;
+      dropdownView.bind('isEnabled').to(translateCommand, 'isEnabled');
 
-      this._addLanguageOptions(dropdownView, locale, editor);
+      this._addLanguageOptions(dropdownView, locale, editor, translateCommand);
 
       return dropdownView;
     });
   }
 
-  _addLanguageOptions(dropdownView, locale, editor) {
+  _addLanguageOptions(dropdownView, locale, editor, translateCommand) {
     const sourceLang = getSourceLanguage();
     const targetLanguages = ['fi', 'sv', 'no', 'da', 'en'];
 
@@ -44,14 +46,13 @@ export default class TranslationUI extends Plugin {
         button.label = label;
         button.withText = true;
         button.tooltip = `Translate to ${langName}`;
+        button.bind('isEnabled').to(translateCommand);
+
+        console.log('[UI] Creating button for:', targetCode);
 
         button.on('execute', () => {
-          try {
-            console.log('[UI] Execute translate command for:', targetCode);
-            editor.execute('translate', { targetLanguage: targetCode });
-          } catch (err) {
-            console.error('[UI] Error executing translate:', err);
-          }
+          console.log('[UI] Button execute event for:', targetCode);
+          editor.execute('translate', { targetLanguage: targetCode });
         });
 
         dropdownView.panelView.children.add(button);

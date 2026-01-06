@@ -305,6 +305,17 @@ function setupEventListeners() {
     loadModelButton.textContent = 'Load Model';
   });
 
+  window.addEventListener('translation-status', (e) => {
+    const { translating } = e.detail;
+    const progressEl = document.getElementById('translation-progress');
+    if (progressEl) {
+      progressEl.style.display = translating ? 'flex' : 'none';
+    }
+    if (translating) {
+      updateStatus('Translating...');
+    }
+  });
+
   window.addEventListener('translation-ready', (e) => {
     const { modelId } = e.detail;
     updateStatus('Ready - Model loaded');
