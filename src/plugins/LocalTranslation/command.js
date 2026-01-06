@@ -107,14 +107,24 @@ export default class TranslateCommand extends Command {
     let textToTranslate = '';
     let shouldTranslateAll = false;
 
-    const hasSelection = ranges.length > 0 && !ranges[0].collapsed;
+    console.log('[DEBUG] ranges.length:', ranges.length);
+    if (ranges.length > 0) {
+      console.log('[DEBUG] ranges[0].collapsed:', ranges[0].collapsed);
+    }
+    
+    const hasSelection = ranges.length > 0 && ranges[0].collapsed === false;
     console.log('[DEBUG] hasSelection:', hasSelection);
+
+    console.log('[DEBUG] Editor content BEFORE extraction:', editor.getData().substring(0, 100));
 
     if (!hasSelection) {
       console.log('[DEBUG] No selection, translating full content');
       textToTranslate = editor.getData();
+      console.log('[DEBUG] Raw textToTranslate:', textToTranslate.substring(0, 50));
       textToTranslate = textToTranslate.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+      console.log('[DEBUG] Cleaned textToTranslate:', textToTranslate.substring(0, 50));
       shouldTranslateAll = true;
+      console.log('[DEBUG] shouldTranslateAll set to:', shouldTranslateAll);
     } else {
       console.log('[DEBUG] Has selection');
       const range = ranges[0];
@@ -138,13 +148,17 @@ export default class TranslateCommand extends Command {
       return;
     }
 
-    console.log('[DEBUG] Translating:', textToTranslate.substring(0, 50), '...');
+    console.log('[DEBUG] Final textToTranslate:', textToTranslate.substring(0, 50), '...');
 
     const translated = await this.translationService.translate(textToTranslate, targetLanguage, sourceLanguage);
-    console.log('[DEBUG] Translation done:', translated.substring(0, 50));
+    console.log('[DEBUG] Translation result:', translated.substring(0, 50));
 
     if (shouldTranslateAll) {
+      console.log('[DEBUG] SHOULD_REPLACE_ALL - About to call setData');
+      console.log('[DEBUG] Current editor content:', editor.getData().substring(0, 100));
+      console.log('[DEBUG] Setting new content to:', `<p>${translated}</p>`.substring(0, 100));
       editor.setData(`<p>${translated}</p>`);
+      console.log('[DEBUG] After setData, editor content:', editor.getData().substring(0, 100));
     } else {
       editor.model.change(writer => {
         for (const range of ranges) {
