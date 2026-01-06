@@ -178,8 +178,13 @@ function setupTranslationEventListeners() {
   window.addEventListener('translation-progress', (e) => {
     const { percentage, progress } = e.detail;
     updateProgressBar(percentage, progress);
-    const statusText = progress.status || (percentage !== null ? `Loading model: ${percentage}%` : 'Loading model...');
-    updateStatus(statusText);
+    if (progress.status) {
+      updateStatus(`Loading: ${progress.status}...`);
+    } else if (percentage !== null) {
+      updateStatus(`Loading model: ${percentage}%`);
+    } else {
+      updateStatus('Loading model...');
+    }
   });
 
   window.addEventListener('translation-ready', (e) => {
@@ -299,9 +304,11 @@ function updateProgressBar(percentage, progress = null) {
   if (percentage !== null && !isNaN(percentage)) {
     progressBar.style.width = `${percentage}%`;
     progressText.textContent = `${percentage}%`;
+    progressBar.classList.remove('loading');
   } else {
-    progressBar.style.width = '0%';
-    progressText.textContent = '-';
+    progressBar.style.width = '100%';
+    progressText.textContent = '...';
+    progressBar.classList.add('loading');
   }
 
   if (progress && progress.status) {
