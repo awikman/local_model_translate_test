@@ -29,25 +29,25 @@ export const MODELS = [
     variants: [
       {
         id: 'en-fi',
-        name: 'EN → FI',
+        name: 'EN → FI (~300MB)',
         modelId: 'Xenova/opus-mt-en-fi',
         description: 'Specialized for English to Finnish'
       },
       {
         id: 'fi-en',
-        name: 'FI → EN',
+        name: 'FI → EN (~300MB)',
         modelId: 'Xenova/opus-mt-fi-en',
         description: 'Specialized for Finnish to English'
       },
       {
         id: 'en-sv',
-        name: 'EN → SV',
+        name: 'EN → SV (~300MB)',
         modelId: 'Xenova/opus-mt-en-sv',
         description: 'Specialized for English to Swedish'
       },
       {
         id: 'sv-en',
-        name: 'SV → EN',
+        name: 'SV → EN (~300MB)',
         modelId: 'Xenova/opus-mt-sv-en',
         description: 'Specialized for Swedish to English'
       }

@@ -113,8 +113,11 @@ function updateModelInfo(modelId) {
   const model = getModelById(modelId);
 
   if (model) {
+    const nameMatch = model.name.match(/^(.+?)\s*\((.+?)\)$/);
+    const displayName = nameMatch ? nameMatch[1] : model.name;
+    const size = nameMatch ? `(${nameMatch[2]})` : '';
     modelInfo.innerHTML = `
-      <strong>${model.name}</strong><br>
+      <strong>${displayName}</strong> <span class="model-size">${size}</span><br>
       ${model.description}
     `;
   } else {

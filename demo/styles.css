@@ -108,6 +108,11 @@ button.secondary:hover {
   border-radius: 4px;
 }
 
+.model-size {
+  color: #198754;
+  font-weight: 500;
+}
+
 .status {
   font-size: 13px;
   padding: 10px;
