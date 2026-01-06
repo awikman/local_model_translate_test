@@ -21,6 +21,21 @@ body {
   margin: 1rem 0;
 }
 
+.demo-info {
+  background: #f0f0f0;
+  color: #555;
+  padding: 12px 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-bottom: 1px solid #ddd;
+  margin: 1rem 0;
+}
+
+.demo-info strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
 .demo-container {
   display: flex;
   height: 100vh;
