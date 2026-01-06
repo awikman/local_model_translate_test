@@ -186,8 +186,69 @@ export class TranslationService {
 
       return this.pipeline;
     } catch (error) {
-      if (error.message && error.message.includes('Unsupported device') && error.message.includes('webgpu')) {
-        console.warn('[Translation] WebGPU not available, falling back to WASM...');
+      this.isLoading = false;
+
+      const errorMessage = error.message || String(error);
+      console.error('[Translation] Error loading model:', errorMessage);
+
+      // Check if WebGPU failed - fall back to WASM
+      const isWebGPUError = errorMessage.includes('webgpu') ||
+                            errorMessage.includes('92195288') ||
+                            errorMessage.includes('WEBGPU') ||
+                            errorMessage.includes('GPU');
+
+      if (isWebGPUError || errorMessage.includes('Aborted')) {
+        console.warn('[Translation] Backend failed, trying alternative backends...');
+
+        const backendsToTry = [
+          { device: 'wasm', dtype: 'q4', name: 'WASM' },
+          { device: 'wasm', dtype: 'q4', name: 'WASM (no threads)', extra: { numThreads: 1 } },
+          { device: 'cpu', dtype: 'q4', name: 'CPU' }
+        ];
+
+        for (const backend of backendsToTry) {
+          try {
+            console.log(`[Translation] Trying ${backend.name}...`);
+            log(`Trying ${backend.name}...`);
+
+            this.pipeline = await pipeline('translation', modelId, {
+              progress_callback: (progress) => {
+                if (this.progressCallback) {
+                  const percentage = this._calculateOverallProgress(progress);
+                  this.progressCallback(percentage, progress);
+                }
+              },
+              device: backend.device,
+              dtype: backend.dtype,
+              ...backend.extra
+            });
+
+            this.currentModelId = modelId;
+            this.isLoading = false;
+
+            const duration = endTimer('load-model', startTime);
+            log(`Model loaded successfully (${backend.name}):`, modelId, 'in', duration, 'ms');
+
+            if (backend.name === 'CPU') {
+              log('Warning: CPU mode is slow. Chrome/Edge with WebGPU recommended.');
+            }
+
+            return this.pipeline;
+          } catch (tryError) {
+            console.warn(`[Translation] ${backend.name} failed:`, tryError.message || tryError);
+            continue;
+          }
+        }
+
+        this.isLoading = false;
+        console.error('[Translation] All backends failed');
+        throw new Error('Failed to load model. All inference backends (WebGPU, WASM, CPU) failed. ' +
+                        'Your browser may have compatibility issues. Try Chrome, Edge, or enable WebGPU in Firefox.');
+      }
+
+      // Check for "unsupported device" error specifically
+      if (errorMessage.includes('Unsupported device')) {
+        console.warn('[Translation] Device not supported, trying WASM...');
 
         try {
           this.pipeline = await pipeline('translation', modelId, {
@@ -201,26 +262,16 @@ export class TranslationService {
             dtype: 'q4'
           });
 
-          if (this.progressCallback) {
-            this.progressCallback(100, { status: 'ready', name: modelId });
-          }
-
           this.currentModelId = modelId;
           this.isLoading = false;
-
-          const duration = endTimer('load-model', startTime);
-          log('Model loaded successfully (WASM fallback):', modelId, 'in', duration, 'ms');
-
+          log('Model loaded successfully (WASM fallback):', modelId);
           return this.pipeline;
         } catch (wasmError) {
-          this.isLoading = false;
-          console.error('[Translation] Error loading model (WASM fallback also failed):', wasmError);
-          throw new Error('Failed to load model. WebGPU and WASM backends are not available. Your browser may not be supported.');
+          throw new Error('Neither WebGPU nor WASM is supported in your browser. ' +
+                          'Please use Chrome 113+, Edge 113+, or Firefox 141+ with WebGPU enabled.');
         }
       }
 
-      this.isLoading = false;
-      console.error('[Translation] Error loading model:', error);
       throw error;
     }
   }

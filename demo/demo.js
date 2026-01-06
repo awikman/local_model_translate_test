@@ -47,15 +47,30 @@ function updateWebGPUBanner() {
   if (!banner) return;
 
   const hasWebGPU = window.useWebGPU === true;
+  const isFirefox = navigator.userAgent.includes('Firefox');
+  const isChrome = navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Edg');
+  const isSafari = navigator.userAgent.includes('Safari') && !isChrome;
 
   if (hasWebGPU) {
     banner.className = 'webgpu-banner visible success';
     banner.querySelector('.check').textContent = '✓';
     banner.querySelector('.message').innerHTML = '<strong>WebGPU enabled</strong> - Translation will be <strong>fast</strong>';
+  } else if (isFirefox) {
+    banner.className = 'webgpu-banner visible warning';
+    banner.querySelector('.check').textContent = '⚠';
+    banner.querySelector('.message').innerHTML = '<strong>Firefox detected</strong> - ONNX Runtime has compatibility issues with Firefox. <a href="https://wiki.mozilla.org/Feature_Policy/Experimental_Features#webgpu" target="_blank">Enable WebGPU</a> or <strong>use Chrome/Edge</strong> for best experience.';
+  } else if (isSafari) {
+    banner.className = 'webgpu-banner visible warning';
+    banner.querySelector('.check').textContent = '⚠';
+    banner.querySelector('.message').innerHTML = '<strong>Safari detected</strong> - WebGPU requires macOS Sonoma+. Use Chrome/Edge for full support.';
+  } else if (!isChrome) {
+    banner.className = 'webgpu-banner visible warning';
+    banner.querySelector('.check').textContent = '⚠';
+    banner.querySelector('.message').innerHTML = '<strong>WebGPU not available</strong> - Translation will use slower WASM. <a href="https://caniuse.com/webgpu" target="_blank">Supported browsers</a>: Chrome 113+, Edge 113+, Firefox 141+';
   } else {
     banner.className = 'webgpu-banner visible warning';
     banner.querySelector('.check').textContent = '⚠';
-    banner.querySelector('.message').innerHTML = '<strong>WebGPU not available</strong> - Using slower WebAssembly (WASM). <a href="https://wiki.mozilla.org/Feature_Policy/Experimental_Features#webgpu" target="_blank">Enable WebGPU in Firefox</a> or use Chrome 113+';
+    banner.querySelector('.message').innerHTML = '<strong>WebGPU not available</strong> - Using slower WebAssembly (WASM). Enable WebGPU in browser settings for better performance.';
   }
 }
 
@@ -259,13 +274,32 @@ function setupEventListeners() {
     updateStatus('Loading model...');
     updateProgressBar(0);
 
+    const isFirefox = navigator.userAgent.includes('Firefox');
+
     try {
       const plugin = editor.plugins.get('LocalTranslation');
       await plugin.loadModel(currentModelId);
       updateStatus('Ready - Model loaded');
     } catch (error) {
       console.error('[Demo] Error loading model:', error);
-      updateStatus('Error: ' + error.message, 'error');
+      let message = error.message || 'Failed to load model';
+
+      if (message.includes('Aborted') || message.includes('92195288') || message.includes('All backends failed')) {
+        if (isFirefox) {
+          updateStatus('Firefox + ONNX Runtime incompatibility - please use Chrome/Edge', 'error');
+        } else {
+          updateStatus('Inference backend error - try Chrome/Edge', 'error');
+        }
+      } else if (message.includes('WebGPU') || message.includes('WASM') || message.includes('backend')) {
+        if (isFirefox) {
+          updateStatus('Try Chrome/Edge for better browser compatibility', 'error');
+        } else {
+          updateStatus('Backend error - try different browser', 'error');
+        }
+      } else {
+        updateStatus('Error: ' + message, 'error');
+      }
+
       loadModelButton.disabled = false;
       loadModelButton.textContent = 'Load Model';
     }
