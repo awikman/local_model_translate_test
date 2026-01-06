@@ -10,60 +10,12 @@ const NLLB_LANGUAGE_CODES = {
   'fr': 'fra_Latn'
 };
 
-const MADLAD_LANGUAGE_CODES = {
-  'en': 'en',
-  'fi': 'fi',
-  'sv': 'sv',
-  'no': 'no',
-  'da': 'da',
-  'de': 'de',
-  'fr': 'fr',
-  'es': 'es',
-  'pt': 'pt',
-  'it': 'it',
-  'nl': 'nl',
-  'pl': 'pl',
-  'ru': 'ru',
-  'ja': 'ja',
-  'zh': 'zh',
-  'ko': 'ko',
-  'ar': 'ar',
-  'hi': 'hi',
-  'tr': 'tr',
-  'vi': 'vi',
-  'th': 'th',
-  'id': 'id',
-  'cs': 'cs',
-  'el': 'el',
-  'he': 'he',
-  'hu': 'hu',
-  'ro': 'ro',
-  'uk': 'uk',
-  'ca': 'ca',
-  'hr': 'hr',
-  'sk': 'sk',
-  'sl': 'sl',
-  'bg': 'bg',
-  'lt': 'lt',
-  'lv': 'lv',
-  'et': 'et',
-  'sr': 'sr'
-};
-
 function toNLLBCode(code) {
   return NLLB_LANGUAGE_CODES[code] || code;
 }
 
-function toMADLADCode(code) {
-  return MADLAD_LANGUAGE_CODES[code] || code;
-}
-
 function isNLLBModel(modelId) {
   return modelId.includes('nllb-200');
-}
-
-function isMADLADModel(modelId) {
-  return modelId.includes('madlad400');
 }
 
 function isWebGPUAvailable() {
@@ -240,33 +192,6 @@ export class TranslationService {
     }
 
     const useNLLB = isNLLBModel(this.currentModelId);
-    const useMADLAD = isMADLADModel(this.currentModelId);
-
-    if (useMADLAD) {
-      const tgtLang = toMADLADCode(targetLanguage);
-      const madladInput = `<2${tgtLang}> ${text}`;
-
-      console.log('[DEBUG] MADLAD translate:', { textLength: text.length, target: tgtLang, model: this.currentModelId });
-
-      try {
-        console.log('[DEBUG] Calling MADLAD pipeline...');
-        const startTime = performance.now();
-        const result = await this.pipeline(madladInput, {
-          max_new_tokens: 1024
-        });
-        const duration = performance.now() - startTime;
-        console.log('[DEBUG] MADLAD pipeline returned in', duration.toFixed(0), 'ms');
-        log('Translation complete in', duration.toFixed(0), 'ms');
-
-        const generatedText = result[0]?.generated_text || result.generated_text || '';
-        const translation = generatedText.replace(`<2${tgtLang}>`, '').trim();
-        return translation;
-      } catch (error) {
-        console.error('[Translation] Error during MADLAD translation:', error);
-        throw error;
-      }
-    }
-
     const tgtLang = useNLLB ? toNLLBCode(targetLanguage) : targetLanguage;
     const srcLang = useNLLB ? toNLLBCode(sourceLanguage) : sourceLanguage;
 

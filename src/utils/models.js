@@ -24,19 +24,6 @@ export const MODELS = [
     ]
   },
   {
-    family: 'madlad400',
-    name: 'MADLAD-400 (400+ languages)',
-    variants: [
-      {
-        id: '3b',
-        name: '3B (~6GB, requires WebGPU)',
-        modelId: 'Kutalia/madlad400-3b-mt-onnx',
-        description: 'State-of-the-art quality for 400+ languages, requires powerful GPU',
-        requiresWebGPU: true
-      }
-    ]
-  },
-  {
     family: 'opus-mt',
     name: 'OpusMT (Language Pairs)',
     variants: [
