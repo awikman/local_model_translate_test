@@ -163,6 +163,16 @@ Deployment is automatic - push to `main` branch and GitHub Pages deploys from `/
 2. No build step required - pure ES modules
 3. Access at: https://ai.wikman.es
 
+### Cleanup Tasks (Tech Debt)
+
+- [ ] Remove unused `getLanguageCode()` function from `src/utils/models.js`
+- [ ] Remove unused `error()` export from `src/utils/logger.js`
+- [ ] Remove unused `performance()` export from `src/utils/logger.js`
+- [ ] Remove duplicate `translation-ready` event listeners in `demo/demo.js` (3 identical handlers)
+- [ ] Remove or implement `updateUI()` function in `demo/demo.js` (currently just logs)
+- [ ] Standardize logging to use `log()` from utils instead of `console.log('[DEBUG]', ...)`
+- [ ] Consider splitting large `demo/demo.js` into separate modules
+
 1. Enter model ID in "Custom Model" field
 2. Click "Apply Custom"
 3. Model loads automatically
