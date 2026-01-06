@@ -57,7 +57,6 @@ export default class LocalTranslation extends Plugin {
 
   _setupCommands() {
     const editor = this.editor;
-
     editor.commands.add('translate', new TranslateCommand(editor, this.translationService));
   }
 

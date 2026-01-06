@@ -2,7 +2,6 @@ import { Plugin } from 'ckeditor5';
 import { createDropdown, ButtonView } from 'ckeditor5';
 import { getLanguageName } from '../../utils/models.js';
 import { getSourceLanguage } from '../../utils/storage.js';
-import { log } from '../../utils/logger.js';
 
 export default class TranslationUI extends Plugin {
   static get pluginName() {
@@ -47,9 +46,12 @@ export default class TranslationUI extends Plugin {
         button.tooltip = `Translate to ${langName}`;
 
         button.on('execute', () => {
-          log('Translate to:', targetCode);
-          editor.execute('translate', { targetLanguage: targetCode });
-
+          try {
+            console.log('[UI] Execute translate command for:', targetCode);
+            editor.execute('translate', { targetLanguage: targetCode });
+          } catch (err) {
+            console.error('[UI] Error executing translate:', err);
+          }
         });
 
         dropdownView.panelView.children.add(button);

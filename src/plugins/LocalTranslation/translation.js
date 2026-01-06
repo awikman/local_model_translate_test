@@ -126,29 +126,25 @@ export class TranslationService {
   }
 
   async translate(text, targetLanguage, sourceLanguage = 'eng_Latn') {
-    console.log('[DEBUG] translate called with:', { text, targetLanguage, sourceLanguage });
-    
     if (!this.pipeline) {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
 
     const nllbTargetLang = toNLLBCode(targetLanguage);
     const nllbSourceLang = toNLLBCode(sourceLanguage);
-    console.log('[DEBUG] NLLB langs:', { source: nllbSourceLang, target: nllbTargetLang });
     
-    log('Translating', text.length, 'chars from', sourceLanguage, 'to', targetLanguage);
+    console.log('[DEBUG] translate:', { textLength: text.length, source: nllbSourceLang, target: nllbTargetLang });
 
     try {
       console.log('[DEBUG] Calling pipeline...');
-      const startTime = startTimer('translate');
+      const startTime = performance.now();
       const result = await this.pipeline(text, {
         src_lang: nllbSourceLang,
         tgt_lang: nllbTargetLang
       });
-      console.log('[DEBUG] Pipeline result:', result);
-
-      const duration = endTimer('translate', startTime);
-      log('Translation complete in', duration, 'ms');
+      const duration = performance.now() - startTime;
+      console.log('[DEBUG] Pipeline returned in', duration.toFixed(0), 'ms');
+      log('Translation complete in', duration.toFixed(0), 'ms');
 
       return result[0]?.translation_text || result.translation_text || '';
     } catch (error) {
