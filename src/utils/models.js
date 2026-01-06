@@ -24,6 +24,19 @@ export const MODELS = [
     ]
   },
   {
+    family: 'madlad400',
+    name: 'MADLAD-400 (400+ languages)',
+    variants: [
+      {
+        id: '3b',
+        name: '3B (~6GB, requires WebGPU)',
+        modelId: 'Kutalia/madlad400-3b-mt-onnx',
+        description: 'State-of-the-art quality for 400+ languages, requires powerful GPU',
+        requiresWebGPU: true
+      }
+    ]
+  },
+  {
     family: 'opus-mt',
     name: 'OpusMT (Language Pairs)',
     variants: [
@@ -67,6 +80,11 @@ export function getModelById(modelId) {
   return null;
 }
 
+export function modelRequiresWebGPU(modelId) {
+  const model = getModelById(modelId);
+  return model?.requiresWebGPU === true;
+}
+
 export function getLanguageCode(name) {
   const codes = {
     'English': 'en',
@@ -75,7 +93,38 @@ export function getLanguageCode(name) {
     'Norwegian': 'no',
     'Danish': 'da',
     'German': 'de',
-    'French': 'fr'
+    'French': 'fr',
+    'Spanish': 'es',
+    'Portuguese': 'pt',
+    'Italian': 'it',
+    'Dutch': 'nl',
+    'Polish': 'pl',
+    'Russian': 'ru',
+    'Japanese': 'ja',
+    'Chinese': 'zh',
+    'Korean': 'ko',
+    'Arabic': 'ar',
+    'Hindi': 'hi',
+    'Turkish': 'tr',
+    'Vietnamese': 'vi',
+    'Thai': 'th',
+    'Indonesian': 'id',
+    'Czech': 'cs',
+    'Greek': 'el',
+    'Hebrew': 'he',
+    'Hungarian': 'hu',
+    'Romanian': 'ro',
+    'Ukrainian': 'uk',
+    'Catalan': 'ca',
+    'Croatian': 'hr',
+    'Slovak': 'sk',
+    'Slovenian': 'sl',
+    'Bulgarian': 'bg',
+    'Lithuanian': 'lt',
+    'Latvian': 'lv',
+    'Estonian': 'et',
+    'Serbian': 'sr',
+    'Ukrainian': 'uk'
   };
   return codes[name] || name.toLowerCase();
 }
@@ -88,7 +137,37 @@ export function getLanguageName(code) {
     'no': 'Norwegian',
     'da': 'Danish',
     'de': 'German',
-    'fr': 'French'
+    'fr': 'French',
+    'es': 'Spanish',
+    'pt': 'Portuguese',
+    'it': 'Italian',
+    'nl': 'Dutch',
+    'pl': 'Polish',
+    'ru': 'Russian',
+    'ja': 'Japanese',
+    'zh': 'Chinese',
+    'ko': 'Korean',
+    'ar': 'Arabic',
+    'hi': 'Hindi',
+    'tr': 'Turkish',
+    'vi': 'Vietnamese',
+    'th': 'Thai',
+    'id': 'Indonesian',
+    'cs': 'Czech',
+    'el': 'Greek',
+    'he': 'Hebrew',
+    'hu': 'Hungarian',
+    'ro': 'Romanian',
+    'uk': 'Ukrainian',
+    'ca': 'Catalan',
+    'hr': 'Croatian',
+    'sk': 'Slovak',
+    'sl': 'Slovenian',
+    'bg': 'Bulgarian',
+    'lt': 'Lithuanian',
+    'lv': 'Latvian',
+    'et': 'Estonian',
+    'sr': 'Serbian'
   };
   return names[code] || code.toUpperCase();
 }

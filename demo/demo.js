@@ -15,31 +15,49 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Demo] DOM Content Loaded');
   console.log('[Demo] Current URL:', window.location.href);
   console.log('[Demo] Browser:', navigator.userAgent);
-  
+
+  updateWebGPUBanner();
   log('Demo initialized');
-  
+
   setupTranslationEventListeners();
   console.log('[Demo] Translation event listeners set up');
-  
+
   try {
     await initializeModelSelector();
     console.log('[Demo] Model selector initialized');
-    
+
     await initializeLanguageSelectors();
     console.log('[Demo] Language selectors initialized');
-    
+
     await initializeEditor();
     console.log('[Demo] Editor initialization started');
-    
+
     setupEventListeners();
     console.log('[Demo] Event listeners set up');
-    
+
     updateStatus('Ready - Click "Load Model" to start');
     updateProgressBar(0);
   } catch (error) {
     console.error('[Demo] Fatal error during initialization:', error);
   }
 });
+
+function updateWebGPUBanner() {
+  const banner = document.getElementById('webgpu-banner');
+  if (!banner) return;
+
+  const hasWebGPU = window.useWebGPU === true;
+
+  if (hasWebGPU) {
+    banner.className = 'webgpu-banner visible success';
+    banner.querySelector('.check').textContent = '✓';
+    banner.querySelector('.message').innerHTML = '<strong>WebGPU enabled</strong> - Translation will be <strong>fast</strong>';
+  } else {
+    banner.className = 'webgpu-banner visible warning';
+    banner.querySelector('.check').textContent = '⚠';
+    banner.querySelector('.message').innerHTML = '<strong>WebGPU not available</strong> - Using slower WebAssembly (WASM). <a href="https://wiki.mozilla.org/Feature_Policy/Experimental_Features#webgpu" target="_blank">Enable WebGPU in Firefox</a> or use Chrome 113+';
+  }
+}
 
 async function initializeModelSelector() {
   console.log('[DEBUG] initializeModelSelector() called');
@@ -116,6 +134,7 @@ function updateModelInfo(modelId) {
     const nameMatch = model.name.match(/^(.+?)\s*\((.+?)\)$/);
     const displayName = nameMatch ? nameMatch[1] : model.name;
     const size = nameMatch ? `(${nameMatch[2]})` : '';
+
     modelInfo.innerHTML = `
       <strong>${displayName}</strong> <span class="model-size">${size}</span><br>
       ${model.description}
@@ -239,14 +258,14 @@ function setupEventListeners() {
     loadModelButton.textContent = 'Loading...';
     updateStatus('Loading model...');
     updateProgressBar(0);
-    
+
     try {
       const plugin = editor.plugins.get('LocalTranslation');
       await plugin.loadModel(currentModelId);
       updateStatus('Ready - Model loaded');
     } catch (error) {
       console.error('[Demo] Error loading model:', error);
-      updateStatus('Error: Failed to load model', 'error');
+      updateStatus('Error: ' + error.message, 'error');
       loadModelButton.disabled = false;
       loadModelButton.textContent = 'Load Model';
     }
