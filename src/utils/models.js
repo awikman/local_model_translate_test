@@ -5,65 +5,15 @@ export const MODELS = [
     variants: [
       {
         id: 'small',
-        name: 'Small (Fast)',
-        size: '300MB',
+        name: 'Small (~300MB)',
         modelId: 'Xenova/nllb-200-distilled-600M',
-        description: 'Best balance of speed and quality, supports 200 languages'
+        description: 'Best balance of speed and quality'
       },
       {
         id: 'medium',
-        name: 'Medium (Balanced)',
-        size: '1GB',
+        name: 'Medium (~1GB)',
         modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Good quality, still relatively fast for most use cases'
-      },
-      {
-        id: 'large',
-        name: 'Large (High Quality)',
-        size: '2GB',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Higher quality translations, better for complex texts'
-      },
-      {
-        id: 'xlarge',
-        name: 'XL (Best Quality)',
-        size: '4GB',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Highest quality, requires more memory and time'
-      }
-    ]
-  },
-  {
-    family: 'opus-mt',
-    name: 'MarianMT (OpusMT)',
-    variants: [
-      {
-        id: 'small',
-        name: 'Small (Fast)',
-        size: '300MB',
-        modelId: 'Xenova/opus-mt-en-fi',
-        description: 'Lightweight, excellent speed, good for common language pairs'
-      },
-      {
-        id: 'medium',
-        name: 'Medium (Balanced)',
-        size: '1GB',
-        modelId: 'Xenova/opus-mt-en-fi',
-        description: 'Better quality, still fast enough for real-time use'
-      },
-      {
-        id: 'large',
-        name: 'Large (High Quality)',
-        size: '2GB',
-        modelId: 'Xenova/nllb-200-distilled-600M',
-        description: 'Improved translations for complex or technical texts'
-      },
-      {
-        id: 'xlarge',
-        name: 'XL (Best Quality)',
-        size: '4GB',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Best possible quality, supports many languages'
+        description: 'Good quality, still relatively fast'
       }
     ]
   },
@@ -73,31 +23,45 @@ export const MODELS = [
     variants: [
       {
         id: 'small',
-        name: 'Small (Fast)',
-        size: '300MB',
-        modelId: 'Xenova/nllb-200-distilled-600M',
+        name: 'Small (~300MB)',
+        modelId: 'Xenova/m2m100_418M',
         description: 'Good for 100+ languages, very efficient'
       },
       {
         id: 'medium',
-        name: 'Medium (Balanced)',
-        size: '1GB',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Strong multilingual support, balanced performance'
+        name: 'Medium (~800MB)',
+        modelId: 'Xenova/m2m100_1.2B',
+        description: 'Strong multilingual support'
+      }
+    ]
+  },
+  {
+    family: 'opus-mt',
+    name: 'OpusMT (Language Pairs)',
+    variants: [
+      {
+        id: 'en-fi',
+        name: 'EN → FI',
+        modelId: 'Xenova/opus-mt-en-fi',
+        description: 'Specialized for English to Finnish'
       },
       {
-        id: 'large',
-        name: 'Large (High Quality)',
-        size: '2GB',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Excellent quality across many language pairs'
+        id: 'fi-en',
+        name: 'FI → EN',
+        modelId: 'Xenova/opus-mt-fi-en',
+        description: 'Specialized for Finnish to English'
       },
       {
-        id: 'xlarge',
-        name: 'XL (Best Quality)',
-        size: '4GB',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'State-of-the-art quality, supports 100+ languages'
+        id: 'en-sv',
+        name: 'EN → SV',
+        modelId: 'Xenova/opus-mt-en-sv',
+        description: 'Specialized for English to Swedish'
+      },
+      {
+        id: 'sv-en',
+        name: 'SV → EN',
+        modelId: 'Xenova/opus-mt-sv-en',
+        description: 'Specialized for Swedish to English'
       }
     ]
   }

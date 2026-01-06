@@ -74,11 +74,12 @@ async function initializeModelSelector() {
     
     if (model.variants && Array.isArray(model.variants)) {
       model.variants.forEach(variant => {
-        console.log(`[DEBUG]   Variant: ${variant.name} (${variant.size}) - modelId: ${variant.modelId}`);
-        
+        console.log(`[DEBUG]   Variant: ${variant.name} - modelId: ${variant.modelId}`);
+
         const option = document.createElement('option');
         option.value = variant.modelId;
-        option.textContent = `${variant.name} (${variant.size})`;
+        const familyShort = model.name.split(' ')[0];
+        option.textContent = `${familyShort} - ${variant.name}`;
         if (variant.modelId === currentModelId) {
           option.selected = true;
           console.log(`[DEBUG]   Selected: ${variant.modelId}`);
@@ -114,7 +115,6 @@ function updateModelInfo(modelId) {
   if (model) {
     modelInfo.innerHTML = `
       <strong>${model.name}</strong><br>
-      Size: ${model.size}<br>
       ${model.description}
     `;
   } else {
