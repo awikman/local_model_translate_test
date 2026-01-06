@@ -260,8 +260,10 @@ function setupEventListeners() {
 
     console.log('[DEBUG] Test button clicked:', { sourceLang, targetLang, testText });
 
-    testResult.innerHTML = '<em>Testing...</em>';
+    testResult.innerHTML = '<em>Translating...</em>';
     testResult.className = 'test-result loading';
+
+    await new Promise(resolve => setTimeout(resolve, 10));
 
     const startTime = Date.now();
 
