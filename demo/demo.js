@@ -160,6 +160,8 @@ async function initializeEditor() {
       placeholder: 'Start typing... Select text and click Translate'
     });
     
+    editor.setData(originalDiv.innerHTML);
+    
     loadingDiv.style.display = 'none';
     
     log('CKEditor5 initialized successfully');
