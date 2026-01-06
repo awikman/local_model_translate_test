@@ -179,12 +179,17 @@ function setupTranslationEventListeners() {
     const { percentage, progress } = e.detail;
     console.log('[DEBUG] translation-progress received:', { percentage, progress });
     updateProgressBar(percentage, progress);
+
     const fileName = progress.file ? progress.file.split('/').pop() : '';
-    if (progress.status === 'progress' && progress.loaded && progress.total) {
-      const filePercent = Math.round((progress.loaded / progress.total) * 100);
-      updateStatus(`Downloading ${fileName}: ${filePercent}%`);
-    } else if (progress.status) {
-      updateStatus(`${progress.status}: ${fileName}`);
+    
+    if (percentage !== null && !isNaN(percentage) && percentage > 0) {
+      updateStatus(`Loading: ${fileName || 'model'} - ${percentage}%`);
+    } else if (progress.status === 'initiate') {
+      updateStatus(`Preparing: ${fileName || 'model'}...`);
+    } else if (progress.status === 'download') {
+      updateStatus(`Waiting: ${fileName || 'model'}...`);
+    } else if (progress.status === 'done') {
+      updateStatus(`Loaded: ${fileName}`);
     } else {
       updateStatus('Loading model...');
     }
@@ -246,8 +251,26 @@ function setupEventListeners() {
 
   window.addEventListener('translation-progress', (e) => {
     const { percentage, progress } = e.detail;
+    console.log('[DEBUG] translation-progress event:', { percentage, progress });
     updateProgressBar(percentage, progress);
-    updateStatus(`Loading model: ${percentage}%`);
+
+    const fileName = progress.file ? progress.file.split('/').pop() : '';
+    
+    let statusMessage;
+    if (percentage !== null && !isNaN(percentage) && percentage > 0) {
+      statusMessage = `Loading: ${fileName || 'model'} - ${percentage}%`;
+    } else if (progress.status === 'initiate') {
+      statusMessage = `Preparing: ${fileName || 'model'}...`;
+    } else if (progress.status === 'download') {
+      statusMessage = `Waiting: ${fileName || 'model'}...`;
+    } else if (progress.status === 'done') {
+      statusMessage = `Loaded: ${fileName}`;
+    } else {
+      statusMessage = 'Loading model...';
+    }
+    
+    console.log('[DEBUG] Setting status to:', statusMessage);
+    updateStatus(statusMessage);
   });
 
   window.addEventListener('translation-ready', (e) => {
@@ -304,28 +327,15 @@ function updateProgressBar(percentage, progress = null) {
   const progressBar = document.getElementById('progress-bar');
   const progressText = document.getElementById('progress-text');
 
-  console.log('[DEBUG] updateProgressBar called:', { percentage, progress });
-
   if (percentage !== null && !isNaN(percentage)) {
-    console.log('[DEBUG] Using percentage parameter:', percentage);
     const clamped = Math.min(100, Math.max(0, percentage));
     progressBar.style.width = `${clamped}%`;
     progressText.textContent = `${clamped}%`;
-    progressBar.classList.remove('loading');
-  } else if (progress && progress.status === 'progress' && progress.loaded && progress.total) {
-    const filePercent = Math.round((progress.loaded / progress.total) * 100);
-    console.log('[DEBUG] filePercent calculated from progress:', filePercent);
-    progressBar.style.width = `${filePercent}%`;
-    progressText.textContent = `${filePercent}%`;
     progressBar.classList.remove('loading');
   } else {
     progressBar.style.width = '100%';
     progressText.textContent = '...';
     progressBar.classList.add('loading');
-  }
-
-  if (progress && progress.status) {
-    log('Progress:', progress.status);
   }
 }
 
