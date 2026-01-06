@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CKEditor5 Local Translation Demo</title>
+  <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.3.0/ckeditor5.css">
+  <link rel="stylesheet" href="demo/styles.css">
+  
+  <script type="importmap">
+{
+  "imports": {
+    "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/47.3.0/ckeditor5.js",
+    "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0/dist/transformers.min.js"
+  }
+}
+  </script>
+</head>
+<body>
+  <div class="demo-container">
+    <aside class="sidebar">
+      <h3>Translation Settings</h3>
+      
+      <div class="setting-group">
+        <label for="model-select">Model:</label>
+        <select id="model-select"></select>
+        <div id="model-info" class="model-info"></div>
+      </div>
+
+      <div class="setting-group">
+        <label for="source-language">Source Language:</label>
+        <select id="source-language">
+          <option value="en">English</option>
+          <option value="fi">Finnish</option>
+          <option value="sv">Swedish</option>
+          <option value="no">Norwegian</option>
+          <option value="da">Danish</option>
+          <option value="de">German</option>
+          <option value="fr">French</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <label>Custom Model:</label>
+        <input type="text" id="custom-model" placeholder="e.g., Xenova/mymodel">
+        <button id="apply-custom-model" class="secondary">Apply Custom</button>
+      </div>
+
+      <div class="setting-group status-section">
+        <h3>Status</h3>
+        <div id="status" class="status">Ready</div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Model Loading</h3>
+        <div class="progress-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="progress-text" class="progress-text">0%</div>
+      </div>
+    </aside>
+
+    <main class="editor-container">
+      <div id="editor">
+        <p>Hello! This is a demonstration of local translation in CKEditor5 using <strong>transformers.js</strong>.</p>
+        <p>Select some text, choose a target language from the toolbar, and click the Translate button. The translation happens entirely in your browser using WebGPU or WebAssembly.</p>
+        <p>Try translating between:</p>
+        <ul>
+          <li>Finnish ↔ English</li>
+          <li>Finnish ↔ Swedish</li>
+          <li>English ↔ Swedish</li>
+        </ul>
+        <p><em>Translation models will be loaded on first use, which may take a few minutes depending on your connection and computer.</em></p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="demo/demo.js"></script>
+</body>
+</html>
