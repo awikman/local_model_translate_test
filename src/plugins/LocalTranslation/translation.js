@@ -156,19 +156,17 @@ export class TranslationService {
       log('Using pipeline from window.transformersPipeline (v3)');
 
       const useWebGPU = isWebGPUAvailable();
-      const device = useWebGPU ? 'webgpu' : 'wasm';
+      log('Device: WebGPU available =', useWebGPU);
 
-      log('Device selection:', { requested: 'webgpu', available: useWebGPU, using: device });
-
+      // Use auto-detection (let transformers.js decide)
+      // Don't explicitly set device - let it use what works
       this.pipeline = await pipeline('translation', modelId, {
         progress_callback: (progress) => {
           if (this.progressCallback) {
             const percentage = this._calculateOverallProgress(progress);
             this.progressCallback(percentage, progress);
           }
-        },
-        device: device,
-        dtype: 'q4'
+        }
       });
 
       if (this.progressCallback) {
@@ -180,99 +178,59 @@ export class TranslationService {
 
       const duration = endTimer('load-model', startTime);
       log('Model loaded successfully:', modelId, 'in', duration, 'ms');
-      if (!useWebGPU) {
-        log('Note: Using WASM fallback. Enable WebGPU in your browser for better performance.');
-      }
 
       return this.pipeline;
     } catch (error) {
       this.isLoading = false;
-
       const errorMessage = error.message || String(error);
       console.error('[Translation] Error loading model:', errorMessage);
 
-      // Check if WebGPU failed - fall back to WASM
-      const isWebGPUError = errorMessage.includes('webgpu') ||
-                            errorMessage.includes('92195288') ||
-                            errorMessage.includes('WEBGPU') ||
-                            errorMessage.includes('GPU');
+      // Check if WebGPU might be enabled but failing
+      const hasWebGPU = isWebGPUAvailable();
+      const webGPUFailure = errorMessage.includes('92195288') ||
+                           errorMessage.includes('Aborted') ||
+                           errorMessage.includes('WEBGPU');
 
-      if (isWebGPUError || errorMessage.includes('Aborted')) {
-        console.warn('[Translation] Backend failed, trying alternative backends...');
+      if (hasWebGPU && webGPUFailure) {
+        console.warn('[Translation] WebGPU appears enabled but failed. Suggest disabling it.');
+        log('WebGPU enabled but failed. Try disabling WebGPU in browser settings.');
 
-        const backendsToTry = [
-          { device: 'wasm', dtype: 'q4', name: 'WASM' },
-          { device: 'wasm', dtype: 'q4', name: 'WASM (no threads)', extra: { numThreads: 1 } },
-          { device: 'cpu', dtype: 'q4', name: 'CPU' }
-        ];
+        throw new Error('WebGPU enabled but failed to load model. ' +
+                        'Please disable WebGPU in your browser and reload the page. ' +
+                        '(This is a known Firefox issue with ONNX Runtime.)');
+      }
 
-        for (const backend of backendsToTry) {
-          try {
-            console.log(`[Translation] Trying ${backend.name}...`);
-            log(`Trying ${backend.name}...`);
+      // Regular fallback to WASM
+      log('Trying WASM fallback...');
 
-            this.pipeline = await pipeline('translation', modelId, {
-              progress_callback: (progress) => {
-                if (this.progressCallback) {
-                  const percentage = this._calculateOverallProgress(progress);
-                  this.progressCallback(percentage, progress);
-                }
-              },
-              device: backend.device,
-              dtype: backend.dtype,
-              ...backend.extra
-            });
-
-            this.currentModelId = modelId;
-            this.isLoading = false;
-
-            const duration = endTimer('load-model', startTime);
-            log(`Model loaded successfully (${backend.name}):`, modelId, 'in', duration, 'ms');
-
-            if (backend.name === 'CPU') {
-              log('Warning: CPU mode is slow. Chrome/Edge with WebGPU recommended.');
+      try {
+        this.pipeline = await pipeline('translation', modelId, {
+          progress_callback: (progress) => {
+            if (this.progressCallback) {
+              const percentage = this._calculateOverallProgress(progress);
+              this.progressCallback(percentage, progress);
             }
+          },
+          device: 'wasm',
+          dtype: 'q4'
+        });
 
-            return this.pipeline;
-          } catch (tryError) {
-            console.warn(`[Translation] ${backend.name} failed:`, tryError.message || tryError);
-            continue;
-          }
+        if (this.progressCallback) {
+          this.progressCallback(100, { status: 'ready', name: modelId });
         }
 
+        this.currentModelId = modelId;
         this.isLoading = false;
-        console.error('[Translation] All backends failed');
-        throw new Error('Failed to load model. All inference backends (WebGPU, WASM, CPU) failed. ' +
-                        'Your browser may have compatibility issues. Try Chrome, Edge, or enable WebGPU in Firefox.');
+
+        const duration = endTimer('load-model', startTime);
+        log('Model loaded successfully (WASM):', modelId, 'in', duration, 'ms');
+
+        return this.pipeline;
+      } catch (wasmError) {
+        this.isLoading = false;
+        console.error('[Translation] WASM fallback failed:', wasmError);
+        throw new Error('Model load failed. Clear cache and try again, or use Chrome/Edge.');
       }
-
-      // Check for "unsupported device" error specifically
-      if (errorMessage.includes('Unsupported device')) {
-        console.warn('[Translation] Device not supported, trying WASM...');
-
-        try {
-          this.pipeline = await pipeline('translation', modelId, {
-            progress_callback: (progress) => {
-              if (this.progressCallback) {
-                const percentage = this._calculateOverallProgress(progress);
-                this.progressCallback(percentage, progress);
-              }
-            },
-            device: 'wasm',
-            dtype: 'q4'
-          });
-
-          this.currentModelId = modelId;
-          this.isLoading = false;
-          log('Model loaded successfully (WASM fallback):', modelId);
-          return this.pipeline;
-        } catch (wasmError) {
-          throw new Error('Neither WebGPU nor WASM is supported in your browser. ' +
-                          'Please use Chrome 113+, Edge 113+, or Firefox 141+ with WebGPU enabled.');
-        }
-      }
-
-      throw error;
     }
   }
 

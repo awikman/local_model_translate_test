@@ -62,21 +62,69 @@
       color: #856404;
       border-color: #ffeeba;
     }
-    .webgpu-banner .check {
-      font-size: 16px;
+
+    .toggle-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .webgpu-banner a {
-      color: inherit;
+
+    .toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .toggle-track {
+      width: 50px;
+      height: 26px;
+      background: #6c757d;
+      border-radius: 13px;
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    .toggle-track.webgpu {
+      background: #198754;
+    }
+
+    .toggle-thumb {
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .toggle-track.webgpu .toggle-thumb {
+      left: 26px;
+    }
+
+    .toggle-label {
       font-weight: 500;
+    }
+
+    .toggle-label.wasm {
+      color: #6c757d;
+    }
+
+    .toggle-label.webgpu {
+      color: #198754;
     }
   </style>
 </head>
 <body>
-  <div id="webgpu-banner" class="webgpu-banner">
-    <span class="check"></span>
-    <span class="message"></span>
-  </div>
-  
+
   <div class="demo-container">
     <aside class="sidebar">
       <h3>Translation Settings</h3>
@@ -134,6 +182,24 @@
       </div>
 
       <div class="setting-group">
+        <label>Backend:</label>
+        <div class="toggle-container">
+          <button id="backend-toggle" class="toggle-btn">
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">WASM</span>
+          </button>
+          <small id="backend-status" style="color: #666; font-size: 11px;">Auto-detected</small>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <button id="clear-cache" class="secondary">Clear Model Cache</button>
+        <small style="color: #666; font-size: 11px;">Clear cached models to force fresh download</small>
+      </div>
+
+      <div class="setting-group">
         <h3>Test</h3>
         <button id="test-translation" class="secondary">Test Translation</button>
         <div id="test-result" class="test-result"></div>
@@ -186,7 +252,7 @@
         <p>Models are downloaded from Hugging Face on first use. Translation quality and speed depend on your device's capabilities and the selected model variant.</p>
         <p><b>Warning:</b> Translation models can consume significant memory (several hundred MB or even several GB). If you experience browser slowdowns or crashes, try a smaller model variant or restart the browser.</p>
         <p><b>Security Note:</b> This demo has an XSS vulnerability. The translation model's output is inserted directly into the editor without sanitization.</p>
-        <p>WebGPU provides GPU acceleration when supported by the browser. Models are downloaded from Hugging Face and cached in the browser for subsequent use.</p>
+        <p>WebGPU provides GPU acceleration when supported by the browser. Use the backend toggle to switch to WASM if models fail to load. Models are downloaded from Hugging Face and cached in the browser for subsequent use.</p>
         <p>This project demonstrates the feasibility of local, privacy-preserving translation directly in the browser without relying on external translation services.</p>
       </div>
     </main>

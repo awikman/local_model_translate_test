@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Demo] Current URL:', window.location.href);
   console.log('[Demo] Browser:', navigator.userAgent);
 
-  updateWebGPUBanner();
+  initializeBackendToggle();
   log('Demo initialized');
 
   setupTranslationEventListeners();
@@ -42,36 +42,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-function updateWebGPUBanner() {
-  const banner = document.getElementById('webgpu-banner');
-  if (!banner) return;
+function initializeBackendToggle() {
+  const toggleBtn = document.getElementById('backend-toggle');
+  const toggleTrack = toggleBtn?.querySelector('.toggle-track');
+  const toggleLabel = toggleBtn?.querySelector('.toggle-label');
+  const backendStatus = document.getElementById('backend-status');
 
-  const hasWebGPU = window.useWebGPU === true;
-  const isFirefox = navigator.userAgent.includes('Firefox');
-  const isChrome = navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Edg');
-  const isSafari = navigator.userAgent.includes('Safari') && !isChrome;
+  if (!toggleBtn || !toggleTrack || !toggleLabel) return;
 
-  if (hasWebGPU) {
-    banner.className = 'webgpu-banner visible success';
-    banner.querySelector('.check').textContent = '✓';
-    banner.querySelector('.message').innerHTML = '<strong>WebGPU enabled</strong> - Translation will be <strong>fast</strong>';
-  } else if (isFirefox) {
-    banner.className = 'webgpu-banner visible warning';
-    banner.querySelector('.check').textContent = '⚠';
-    banner.querySelector('.message').innerHTML = '<strong>Firefox detected</strong> - ONNX Runtime has compatibility issues with Firefox. <a href="https://wiki.mozilla.org/Feature_Policy/Experimental_Features#webgpu" target="_blank">Enable WebGPU</a> or <strong>use Chrome/Edge</strong> for best experience.';
-  } else if (isSafari) {
-    banner.className = 'webgpu-banner visible warning';
-    banner.querySelector('.check').textContent = '⚠';
-    banner.querySelector('.message').innerHTML = '<strong>Safari detected</strong> - WebGPU requires macOS Sonoma+. Use Chrome/Edge for full support.';
-  } else if (!isChrome) {
-    banner.className = 'webgpu-banner visible warning';
-    banner.querySelector('.check').textContent = '⚠';
-    banner.querySelector('.message').innerHTML = '<strong>WebGPU not available</strong> - Translation will use slower WASM. <a href="https://caniuse.com/webgpu" target="_blank">Supported browsers</a>: Chrome 113+, Edge 113+, Firefox 141+';
-  } else {
-    banner.className = 'webgpu-banner visible warning';
-    banner.querySelector('.check').textContent = '⚠';
-    banner.querySelector('.message').innerHTML = '<strong>WebGPU not available</strong> - Using slower WebAssembly (WASM). Enable WebGPU in browser settings for better performance.';
+  let savedPreference = localStorage.getItem('translation-backend');
+  const hasWebGPU = navigator.gpu ? true : false;
+
+  let backend = savedPreference || (hasWebGPU ? 'webgpu' : 'wasm');
+
+  function updateToggleUI() {
+    const isWebGPU = backend === 'webgpu';
+    toggleTrack.classList.toggle('webgpu', isWebGPU);
+    toggleLabel.textContent = isWebGPU ? 'WebGPU' : 'WASM';
+    toggleLabel.className = `toggle-label ${backend}`;
+    window.preferredBackend = backend;
+
+    if (savedPreference) {
+      backendStatus.textContent = `Saved: ${backend.toUpperCase()}`;
+    } else {
+      backendStatus.textContent = hasWebGPU ? 'Auto-detected: WebGPU available' : 'Auto-detected: WASM fallback';
+    }
+
+    console.log('[Demo] Backend set to:', backend);
   }
+
+  updateToggleUI();
+
+  toggleBtn.addEventListener('click', () => {
+    backend = backend === 'webgpu' ? 'wasm' : 'webgpu';
+    localStorage.setItem('translation-backend', backend);
+    savedPreference = backend;
+    updateToggleUI();
+    updateStatus(`Backend changed to ${backend.toUpperCase()}. Reload page and try loading model.`, 'warning');
+  });
 }
 
 async function initializeModelSelector() {
@@ -275,35 +283,63 @@ function setupEventListeners() {
     updateProgressBar(0);
 
     const isFirefox = navigator.userAgent.includes('Firefox');
+    const hasWebGPU = navigator.gpu ? true : false;
 
     try {
       const plugin = editor.plugins.get('LocalTranslation');
       await plugin.loadModel(currentModelId);
       updateStatus('Ready - Model loaded');
+      loadModelButton.textContent = 'Model Loaded';
     } catch (error) {
       console.error('[Demo] Error loading model:', error);
       let message = error.message || 'Failed to load model';
 
-      if (message.includes('Aborted') || message.includes('92195288') || message.includes('All backends failed')) {
+      if (hasWebGPU && (message.includes('WebGPU enabled') || message.includes('92195288') || message.includes('Aborted'))) {
         if (isFirefox) {
-          updateStatus('Firefox + ONNX Runtime incompatibility - please use Chrome/Edge', 'error');
+          updateStatus('WebGPU enabled but failing. Disable it in about:config → dom.webgpu.enabled = false', 'error');
         } else {
-          updateStatus('Inference backend error - try Chrome/Edge', 'error');
+          updateStatus('WebGPU error. Try disabling WebGPU in browser settings', 'error');
         }
-      } else if (message.includes('WebGPU') || message.includes('WASM') || message.includes('backend')) {
-        if (isFirefox) {
-          updateStatus('Try Chrome/Edge for better browser compatibility', 'error');
-        } else {
-          updateStatus('Backend error - try different browser', 'error');
-        }
+      } else if (isFirefox && (message.includes('Aborted') || message.includes('92195288'))) {
+        updateStatus('Firefox issue: Disable WebGPU in about:config and reload', 'error');
+      } else if (message.includes('WASM') || message.includes('backend')) {
+        updateStatus('Backend error - try Chrome/Edge for better compatibility', 'error');
       } else {
-        updateStatus('Error: ' + message, 'error');
+        updateStatus('Error: ' + message.substring(0, 100), 'error');
       }
 
       loadModelButton.disabled = false;
       loadModelButton.textContent = 'Load Model';
     }
   });
+
+  const clearCacheButton = document.getElementById('clear-cache');
+  if (clearCacheButton) {
+    clearCacheButton.addEventListener('click', async () => {
+      updateStatus('Clearing cache...');
+      clearCacheButton.disabled = true;
+
+      try {
+        const cachesToDelete = await caches.keys();
+        for (const cacheName of cachesToDelete) {
+          await caches.delete(cacheName);
+          console.log('[Demo] Deleted cache:', cacheName);
+        }
+
+        updateStatus('Cache cleared. Reload page and try loading model again.', 'warning');
+        setTimeout(() => {
+          if (confirm('Reload page now?')) {
+            window.location.reload();
+          }
+        }, 500);
+      } catch (error) {
+        console.error('[Demo] Error clearing cache:', error);
+        updateStatus('Error clearing cache: ' + error.message, 'error');
+      }
+
+      clearCacheButton.disabled = false;
+    });
+  }
 
   const testButton = document.getElementById('test-translation');
   const testResult = document.getElementById('test-result');
