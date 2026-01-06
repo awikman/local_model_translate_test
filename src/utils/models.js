@@ -8,12 +8,6 @@ export const MODELS = [
         name: 'Small (~300MB)',
         modelId: 'Xenova/nllb-200-distilled-600M',
         description: 'Best balance of speed and quality'
-      },
-      {
-        id: 'medium',
-        name: 'Medium (~1GB)',
-        modelId: 'Xenova/nllb-200-distilled-1.3B',
-        description: 'Good quality, still relatively fast'
       }
     ]
   },
