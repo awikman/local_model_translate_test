@@ -14,6 +14,10 @@ function toNLLBCode(code) {
   return NLLB_LANGUAGE_CODES[code] || code;
 }
 
+function isNLLBModel(modelId) {
+  return modelId.includes('nllb-200');
+}
+
 export class TranslationService {
   static instance = null;
 
@@ -130,17 +134,18 @@ export class TranslationService {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
 
-    const nllbTargetLang = toNLLBCode(targetLanguage);
-    const nllbSourceLang = toNLLBCode(sourceLanguage);
-    
-    console.log('[DEBUG] translate:', { textLength: text.length, source: nllbSourceLang, target: nllbTargetLang });
+    const useNLLB = isNLLBModel(this.currentModelId);
+    const tgtLang = useNLLB ? toNLLBCode(targetLanguage) : targetLanguage;
+    const srcLang = useNLLB ? toNLLBCode(sourceLanguage) : sourceLanguage;
+
+    console.log('[DEBUG] translate:', { textLength: text.length, source: srcLang, target: tgtLang, model: this.currentModelId });
 
     try {
       console.log('[DEBUG] Calling pipeline...');
       const startTime = performance.now();
       const result = await this.pipeline(text, {
-        src_lang: nllbSourceLang,
-        tgt_lang: nllbTargetLang
+        src_lang: srcLang,
+        tgt_lang: tgtLang
       });
       const duration = performance.now() - startTime;
       console.log('[DEBUG] Pipeline returned in', duration.toFixed(0), 'ms');
