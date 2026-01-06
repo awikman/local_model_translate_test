@@ -177,7 +177,6 @@ async function initializeEditor() {
 function setupTranslationEventListeners() {
   window.addEventListener('translation-progress', (e) => {
     const { percentage, progress } = e.detail;
-    console.log('[DEBUG] translation-progress received:', { percentage, progress });
     updateProgressBar(percentage, progress);
 
     const fileName = progress.file ? progress.file.split('/').pop() : '';
@@ -247,30 +246,6 @@ function setupEventListeners() {
       loadModelButton.disabled = false;
       loadModelButton.textContent = 'Load Model';
     }
-  });
-
-  window.addEventListener('translation-progress', (e) => {
-    const { percentage, progress } = e.detail;
-    console.log('[DEBUG] translation-progress event:', { percentage, progress });
-    updateProgressBar(percentage, progress);
-
-    const fileName = progress.file ? progress.file.split('/').pop() : '';
-    
-    let statusMessage;
-    if (percentage !== null && !isNaN(percentage) && percentage > 0) {
-      statusMessage = `Loading: ${fileName || 'model'} - ${percentage}%`;
-    } else if (progress.status === 'initiate') {
-      statusMessage = `Preparing: ${fileName || 'model'}...`;
-    } else if (progress.status === 'download') {
-      statusMessage = `Waiting: ${fileName || 'model'}...`;
-    } else if (progress.status === 'done') {
-      statusMessage = `Loaded: ${fileName}`;
-    } else {
-      statusMessage = 'Loading model...';
-    }
-    
-    console.log('[DEBUG] Setting status to:', statusMessage);
-    updateStatus(statusMessage);
   });
 
   window.addEventListener('translation-ready', (e) => {
