@@ -39,6 +39,7 @@ export default class TranslationUI extends Plugin {
       updateTooltip();
 
       window.addEventListener('translation-status', updateTooltip);
+      window.addEventListener('translation-ready', updateTooltip);
 
       this._addLanguageOptions(dropdownView, locale, editor, translateCommand);
 
