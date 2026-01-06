@@ -9,15 +9,10 @@ export default class TranslateCommand extends Command {
   }
   
   refresh() {
-    const model = this.editor.model;
-    const selection = model.document.selection;
-
-    this.isEnabled = !selection.isCollapsed && this.translationService.isReady();
+    this.isEnabled = this.translationService.isReady();
   }
 
   async execute(options = {}) {
-    const model = this.editor.model;
-    const selection = model.document.selection;
     const targetLanguage = options.targetLanguage;
 
     if (!targetLanguage) {
@@ -32,46 +27,71 @@ export default class TranslateCommand extends Command {
     }
 
     const sourceLanguage = getSourceLanguage();
+    console.log('[DEBUG] translate command:', { targetLanguage, sourceLanguage });
 
-    model.change(writer => {
-      const selectedRanges = selection.getSelectedRanges();
+    const editor = this.editor;
+    
+    const progressEl = document.getElementById('translation-progress');
+    if (progressEl) progressEl.style.display = 'flex';
+    
+    const ranges = Array.from(editor.model.document.selection.getRanges());
+    let textToTranslate = '';
+    let shouldTranslateAll = false;
 
-      for (const range of selectedRanges) {
-        const text = model.getSelectedContent(range);
-        const textContent = text.data || '';
-
-        if (textContent.trim()) {
-          log('Executing translation for text:', textContent.substring(0, 50) + '...');
-
-          writer.setSelection(range);
-          writer.remove(range);
-
-          const writerText = writer.createText('[Translating...]', { 'data-placeholder': true });
-          writer.insert(writerText, range.start);
+    if (ranges.length === 0 || ranges[0].collapsed) {
+      console.log('[DEBUG] No selection, translating full content');
+      textToTranslate = editor.getData();
+      shouldTranslateAll = true;
+      textToTranslate = textToTranslate.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    } else {
+      console.log('[DEBUG] Has selection, ranges:', ranges.length);
+      const range = ranges[0];
+      const root = range.root;
+      const startPath = range.start.path;
+      const endPath = range.end.path;
+      
+      if (startPath.length === 1 && endPath.length === 1 && startPath[0] === endPath[0]) {
+        const node = root.getChild(startPath[0]);
+        if (node && node.data) {
+          textToTranslate = node.data.substring(range.start.offset, range.end.offset);
         }
+      } else {
+        textToTranslate = editor.getData();
+        console.log('[DEBUG] Multi-node selection, using full content');
       }
-    });
+      
+      console.log('[DEBUG] Selected text:', textToTranslate.substring(0, 50));
+    }
+
+    if (!textToTranslate.trim()) {
+      console.log('[DEBUG] Nothing to translate');
+      if (progressEl) progressEl.style.display = 'none';
+      return;
+    }
 
     try {
-      const fullText = this.editor.getData();
-      const cleanText = fullText.replace(/\[Translating\.\.\.\]/g, '');
+      console.log('[DEBUG] Translating...');
+      const translated = await this.translationService.translate(textToTranslate, targetLanguage, sourceLanguage);
+      console.log('[DEBUG] Translation done:', translated.substring(0, 50));
 
-      const translatedText = await this.translationService.translate(cleanText, targetLanguage, sourceLanguage);
+      if (shouldTranslateAll) {
+        const newContent = `<p>${translated}</p>`;
+        editor.setData(newContent);
+      } else {
+        editor.model.change(writer => {
+          for (const range of ranges) {
+            writer.remove(range);
+          }
+          writer.insert(writer.createText(translated), ranges[0].start);
+        });
+      }
 
-      model.change(writer => {
-        const selection = model.document.selection;
-        const selectedRanges = selection.getSelectedRanges();
-
-        for (const range of selectedRanges) {
-          writer.remove(range);
-          writer.insert(writer.createText(translatedText), range.start);
-        }
-      });
-
-      log('Translation applied successfully');
+      console.log('[DEBUG] Done');
     } catch (error) {
-      console.error('[Translation] Error executing translation:', error);
+      console.error('[Translation] Error:', error);
       throw error;
+    } finally {
+      if (progressEl) progressEl.style.display = 'none';
     }
   }
 }

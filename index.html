@@ -84,6 +84,15 @@
         <button id="test-translation" class="secondary">Test Translation</button>
         <div id="test-result" class="test-result"></div>
       </div>
+
+      <div class="setting-group">
+        <h3>Status</h3>
+        <div id="status" class="status">Ready</div>
+        <div id="translation-progress" class="translation-progress" style="display: none;">
+          <div class="spinner"></div>
+          <span>Translation in progress...</span>
+        </div>
+      </div>
     </aside>
 
     <main class="editor-container">
@@ -93,7 +102,7 @@
         Start with small models and save your work first.
       </div>
 
-      <div id="editor">
+      <div id="editor" style="display: none;">
         <p>Hello! This is a demonstration of local translation in CKEditor5 using <strong>transformers.js</strong>.</p>
         <p>Select some text, choose a target language from the toolbar, and click the Translate button. The translation happens entirely in your browser using WebGPU or WebAssembly.</p>
         <p>Try translating between:</p>
