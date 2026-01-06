@@ -137,18 +137,18 @@ async function initializeLanguageSelectors() {
 }
 
 async function initializeEditor() {
-  const editorDiv = document.getElementById('editor');
+  const editorContainer = document.getElementById('editor-container');
   const loadingDiv = document.getElementById('editor-loading');
   const errorDiv = document.getElementById('editor-error');
+  const originalDiv = document.getElementById('editor-original');
   
   try {
     log('Initializing CKEditor5...');
     
-    editorDiv.style.display = 'none';
     loadingDiv.style.display = 'block';
-    errorDiv.style.display = 'none';
+    originalDiv.style.display = 'none';
     
-    editor = await ClassicEditor.create(editorDiv, {
+    editor = await ClassicEditor.create(editorContainer, {
       plugins: [
         Essentials,
         Paragraph,
@@ -161,7 +161,6 @@ async function initializeEditor() {
     });
     
     loadingDiv.style.display = 'none';
-    editorDiv.style.display = 'block';
     
     log('CKEditor5 initialized successfully');
   } catch (error) {
