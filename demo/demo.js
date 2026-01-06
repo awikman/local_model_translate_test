@@ -397,3 +397,69 @@ function updateUI() {
 }
 
 export { editor };
+
+(function() {
+  const TEN_MINUTES = 10 * 60 * 1000;
+  const STORAGE_KEY = 'fake-version-offset';
+
+  function getWindowIndex() {
+    const now = Date.now();
+    return Math.floor(now / TEN_MINUTES);
+  }
+
+  function generateFakeVersion(windowIndex) {
+    const baseSeed = windowIndex * 73856093 ^ windowIndex * 19349663;
+    const major = 1;
+    const minor = (baseSeed % 48) + Math.floor(windowIndex / 100) % 10;
+    const patch = (baseSeed % 80);
+    return { major, minor, patch, windowIndex };
+  }
+
+  function createVersionBadge() {
+    const existing = document.getElementById('fake-version-badge');
+    if (existing) existing.remove();
+
+    const windowIndex = getWindowIndex();
+    let { major, minor, patch } = generateFakeVersion(windowIndex);
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const data = JSON.parse(stored);
+      if (data.windowIndex === windowIndex) {
+        patch += data.offset;
+      }
+    }
+
+    const version = `${major}.${minor}.${patch}`;
+    const badge = document.createElement('div');
+    badge.id = 'fake-version-badge';
+    badge.className = 'fake-version';
+    badge.textContent = `v${version}`;
+    badge.title = 'Click to increment';
+
+    badge.addEventListener('click', () => {
+      const currentWindow = getWindowIndex();
+      let current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"windowIndex":0,"offset":0}');
+      if (current.windowIndex !== currentWindow) {
+        current = { windowIndex: currentWindow, offset: 0 };
+      }
+      current.offset += 1;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+
+      const { minor } = generateFakeVersion(currentWindow);
+      const basePatch = generateFakeVersion(currentWindow).patch;
+      const newPatch = basePatch + current.offset;
+
+      badge.textContent = `v${major}.${minor}.${newPatch}`;
+    });
+
+    document.body.appendChild(badge);
+  }
+
+  function updateVersionBadge() {
+    createVersionBadge();
+  }
+
+  createVersionBadge();
+  setInterval(updateVersionBadge, TEN_MINUTES);
+})();

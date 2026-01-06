@@ -321,3 +321,24 @@ button.secondary:hover {
   color: white;
   font-size: 10px;
 }
+
+.fake-version {
+  position: fixed;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: #999;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+  z-index: 1000;
+}
+
+.fake-version:hover {
+  color: #198754;
+}
+
+.fake-version:active {
+  transform: scale(0.95);
+}
