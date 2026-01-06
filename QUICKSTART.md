@@ -49,7 +49,9 @@ On first load, you'll see:
 - Click "Apply Custom"
 - Model loads automatically
 
-## Console Debugging
+## Deployment
+
+The demo is live at https://ai.wikman.es - no server needed, just open in browser.
 
 Open browser console (F12) to see:
 ```
@@ -57,6 +59,15 @@ Open browser console (F12) to see:
 [Translation] Loading model: Xenova/nllb-200-distilled-600M
 [Translation] Model loaded successfully: ... in 1245.32ms
 [Translation] Translation complete in 2.34ms
+```
+
+## Deployment
+
+The demo is live at **https://ai.wikman.es** - no server needed, just open in browser.
+
+For local development, run:
+```bash
+python3 server.py
 ```
 
 ## Performance Tips
