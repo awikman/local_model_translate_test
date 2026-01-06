@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   log('Demo initialized');
   
+  setupTranslationEventListeners();
+  console.log('[Demo] Translation event listeners set up');
+  
   try {
     await initializeModelSelector();
     console.log('[Demo] Model selector initialized');
@@ -30,6 +33,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     setupEventListeners();
     console.log('[Demo] Event listeners set up');
+    
+    updateStatus('Ready - Click "Load Model" to start');
+    updateProgressBar(0);
   } catch (error) {
     console.error('[Demo] Fatal error during initialization:', error);
   }
@@ -168,10 +174,27 @@ async function initializeEditor() {
   }
 }
 
+function setupTranslationEventListeners() {
+  window.addEventListener('translation-progress', (e) => {
+    const { percentage, progress } = e.detail;
+    updateProgressBar(percentage, progress);
+    const statusText = progress.status || (percentage !== null ? `Loading model: ${percentage}%` : 'Loading model...');
+    updateStatus(statusText);
+  });
+
+  window.addEventListener('translation-ready', (e) => {
+    const { modelId } = e.detail;
+    updateStatus('Ready - Model loaded');
+    updateProgressBar(100);
+    log('Translation model ready:', modelId);
+  });
+}
+
 function setupEventListeners() {
   const modelSelect = document.getElementById('model-select');
   const customModelInput = document.getElementById('custom-model');
   const applyCustomButton = document.getElementById('apply-custom-model');
+  const loadModelButton = document.getElementById('load-model');
 
   modelSelect.addEventListener('change', async (e) => {
     const modelId = e.target.value;
@@ -195,6 +218,24 @@ function setupEventListeners() {
     await changeModel(customModel);
   });
 
+  loadModelButton.addEventListener('click', async () => {
+    loadModelButton.disabled = true;
+    loadModelButton.textContent = 'Loading...';
+    updateStatus('Loading model...');
+    updateProgressBar(0);
+    
+    try {
+      const plugin = editor.plugins.get('LocalTranslation');
+      await plugin.loadModel(currentModelId);
+      updateStatus('Ready - Model loaded');
+    } catch (error) {
+      console.error('[Demo] Error loading model:', error);
+      updateStatus('Error: Failed to load model', 'error');
+      loadModelButton.disabled = false;
+      loadModelButton.textContent = 'Load Model';
+    }
+  });
+
   window.addEventListener('translation-progress', (e) => {
     const { percentage, progress } = e.detail;
     updateProgressBar(percentage, progress);
@@ -206,6 +247,22 @@ function setupEventListeners() {
     updateStatus('Ready - Model loaded');
     updateProgressBar(100);
     log('Translation model ready:', modelId);
+  });
+
+  window.addEventListener('translation-error', (e) => {
+    const { message } = e.detail;
+    updateStatus(message, 'warning');
+    loadModelButton.disabled = false;
+    loadModelButton.textContent = 'Load Model';
+  });
+
+  window.addEventListener('translation-ready', (e) => {
+    const { modelId } = e.detail;
+    updateStatus('Ready - Model loaded');
+    updateProgressBar(100);
+    log('Translation model ready:', modelId);
+    loadModelButton.textContent = 'Model Loaded';
+    loadModelButton.disabled = true;
   });
 }
 
@@ -239,11 +296,16 @@ function updateProgressBar(percentage, progress = null) {
   const progressBar = document.getElementById('progress-bar');
   const progressText = document.getElementById('progress-text');
 
-  progressBar.style.width = `${percentage}%`;
-  progressText.textContent = `${percentage}%`;
+  if (percentage !== null && !isNaN(percentage)) {
+    progressBar.style.width = `${percentage}%`;
+    progressText.textContent = `${percentage}%`;
+  } else {
+    progressBar.style.width = '0%';
+    progressText.textContent = '-';
+  }
 
   if (progress && progress.status) {
-    log('Progress:', progress.status, `${percentage}%`);
+    log('Progress:', progress.status, percentage !== null ? `${percentage}%` : '');
   }
 }
 

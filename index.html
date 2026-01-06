@@ -35,6 +35,7 @@
   </script>
 </head>
 <body>
+  
   <div class="demo-container">
     <aside class="sidebar">
       <h3>Translation Settings</h3>
@@ -71,6 +72,7 @@
 
       <div class="setting-group">
         <h3>Model Loading</h3>
+        <button id="load-model" class="primary">Load Model</button>
         <div class="progress-container">
           <div id="progress-bar" class="progress-bar"></div>
         </div>
@@ -79,6 +81,12 @@
     </aside>
 
     <main class="editor-container">
+      <div class="demo-warning">
+        <strong>Proof of Concept Demo:</strong> This loads an AI translation model directly in your browser. 
+        Large models may use significant memory and could slow or crash your browser. 
+        Start with small models and save your work first.
+      </div>
+
       <div id="editor">
         <p>Hello! This is a demonstration of local translation in CKEditor5 using <strong>transformers.js</strong>.</p>
         <p>Select some text, choose a target language from the toolbar, and click the Translate button. The translation happens entirely in your browser using WebGPU or WebAssembly.</p>

@@ -11,6 +11,16 @@ body {
   overflow: hidden;
 }
 
+.demo-warning {
+  background: #fff3cd;
+  color: #856404;
+  padding: 12px 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-bottom: 1px solid #ffeeba;
+  margin: 1rem 0;
+}
+
 .demo-container {
   display: flex;
   height: 100vh;

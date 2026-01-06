@@ -34,10 +34,25 @@ export default class LocalTranslation extends Plugin {
     this._setupCommands();
     this._setupToolbar();
 
-    if (this.configModel) {
-      log('Configured with model:', this.configModel);
-      await this._preloadModel();
-    }
+    log('LocalTranslation plugin initialized');
+    log('Model will load when you click "Load Model" button');
+  }
+
+  async loadModel(modelId = null) {
+    const targetModel = modelId || this.configModel;
+    log('Loading model on demand:', targetModel);
+    
+    this.translationService.setProgressCallback((percentage, progress) => {
+      window.dispatchEvent(new CustomEvent('translation-progress', {
+        detail: { percentage, progress }
+      }));
+    });
+
+    await this.translationService.loadModel(targetModel);
+
+    window.dispatchEvent(new CustomEvent('translation-ready', {
+      detail: { modelId: targetModel }
+    }));
   }
 
   _setupCommands() {
@@ -55,26 +70,6 @@ export default class LocalTranslation extends Plugin {
     }
   }
 
-  async _preloadModel() {
-    try {
-      log('Preloading model:', this.configModel);
-
-      this.translationService.setProgressCallback((percentage, progress) => {
-        window.dispatchEvent(new CustomEvent('translation-progress', {
-          detail: { percentage, progress }
-        }));
-      });
-
-      await this.translationService.loadModel(this.configModel);
-
-      window.dispatchEvent(new CustomEvent('translation-ready', {
-        detail: { modelId: this.configModel }
-        }));
-    } catch (error) {
-      warn('Failed to preload model:', error);
-    }
-  }
-
   async changeModel(modelId) {
     log('Changing model to:', modelId);
 
@@ -82,7 +77,7 @@ export default class LocalTranslation extends Plugin {
     saveConfig({ modelId });
 
     try {
-      await this._preloadModel();
+      await this.loadModel(modelId);
       log('Model change successful');
     } catch (error) {
       console.error('[Translation] Error changing model:', error);

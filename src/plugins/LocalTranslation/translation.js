@@ -53,7 +53,7 @@ export class TranslationService {
       this.pipeline = await pipeline('translation', modelId, {
         progress_callback: (progress) => {
           if (this.progressCallback) {
-            const percentage = Math.round(progress.progress * 100);
+            const percentage = progress.progress !== undefined ? Math.round(progress.progress * 100) : null;
             this.progressCallback(percentage, progress);
           }
         },

@@ -24,7 +24,10 @@ export default class TranslateCommand extends Command {
     }
 
     if (!this.translationService.isReady()) {
-      throw new Error('Translation model not ready. Please wait for the model to load.');
+      window.dispatchEvent(new CustomEvent('translation-error', {
+        detail: { message: 'Please click "Load Model" button first' }
+      }));
+      throw new Error('Translation model not ready. Click "Load Model" button.');
     }
 
     model.change(writer => {
