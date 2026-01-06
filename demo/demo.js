@@ -15,31 +15,72 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Demo] DOM Content Loaded');
   console.log('[Demo] Current URL:', window.location.href);
   console.log('[Demo] Browser:', navigator.userAgent);
-  
+
+  initializeBackendToggle();
   log('Demo initialized');
-  
+
   setupTranslationEventListeners();
   console.log('[Demo] Translation event listeners set up');
-  
+
   try {
     await initializeModelSelector();
     console.log('[Demo] Model selector initialized');
-    
+
     await initializeLanguageSelectors();
     console.log('[Demo] Language selectors initialized');
-    
+
     await initializeEditor();
     console.log('[Demo] Editor initialization started');
-    
+
     setupEventListeners();
     console.log('[Demo] Event listeners set up');
-    
+
     updateStatus('Ready - Click "Load Model" to start');
     updateProgressBar(0);
   } catch (error) {
     console.error('[Demo] Fatal error during initialization:', error);
   }
 });
+
+function initializeBackendToggle() {
+  const toggleBtn = document.getElementById('backend-toggle');
+  const toggleTrack = toggleBtn?.querySelector('.toggle-track');
+  const toggleLabel = toggleBtn?.querySelector('.toggle-label');
+  const backendStatus = document.getElementById('backend-status');
+
+  if (!toggleBtn || !toggleTrack || !toggleLabel) return;
+
+  let savedPreference = localStorage.getItem('translation-backend');
+  const hasWebGPU = navigator.gpu ? true : false;
+
+  let backend = savedPreference || (hasWebGPU ? 'webgpu' : 'wasm');
+
+  function updateToggleUI() {
+    const isWebGPU = backend === 'webgpu';
+    toggleTrack.classList.toggle('webgpu', isWebGPU);
+    toggleLabel.textContent = isWebGPU ? 'WebGPU' : 'WASM';
+    toggleLabel.className = `toggle-label ${backend}`;
+    window.preferredBackend = backend;
+
+    if (savedPreference) {
+      backendStatus.textContent = `Saved: ${backend.toUpperCase()}`;
+    } else {
+      backendStatus.textContent = hasWebGPU ? 'Auto-detected: WebGPU available' : 'Auto-detected: WASM fallback';
+    }
+
+    console.log('[Demo] Backend set to:', backend);
+  }
+
+  updateToggleUI();
+
+  toggleBtn.addEventListener('click', () => {
+    backend = backend === 'webgpu' ? 'wasm' : 'webgpu';
+    localStorage.setItem('translation-backend', backend);
+    savedPreference = backend;
+    updateToggleUI();
+    updateStatus(`Backend changed to ${backend.toUpperCase()}. Reload page and try loading model.`, 'warning');
+  });
+}
 
 async function initializeModelSelector() {
   console.log('[DEBUG] initializeModelSelector() called');
@@ -116,6 +157,7 @@ function updateModelInfo(modelId) {
     const nameMatch = model.name.match(/^(.+?)\s*\((.+?)\)$/);
     const displayName = nameMatch ? nameMatch[1] : model.name;
     const size = nameMatch ? `(${nameMatch[2]})` : '';
+
     modelInfo.innerHTML = `
       <strong>${displayName}</strong> <span class="model-size">${size}</span><br>
       ${model.description}
@@ -239,18 +281,65 @@ function setupEventListeners() {
     loadModelButton.textContent = 'Loading...';
     updateStatus('Loading model...');
     updateProgressBar(0);
-    
+
+    const isFirefox = navigator.userAgent.includes('Firefox');
+    const hasWebGPU = navigator.gpu ? true : false;
+
     try {
       const plugin = editor.plugins.get('LocalTranslation');
       await plugin.loadModel(currentModelId);
       updateStatus('Ready - Model loaded');
+      loadModelButton.textContent = 'Model Loaded';
     } catch (error) {
       console.error('[Demo] Error loading model:', error);
-      updateStatus('Error: Failed to load model', 'error');
+      let message = error.message || 'Failed to load model';
+
+      if (hasWebGPU && (message.includes('WebGPU enabled') || message.includes('92195288') || message.includes('Aborted'))) {
+        if (isFirefox) {
+          updateStatus('WebGPU enabled but failing. Disable it in about:config → dom.webgpu.enabled = false', 'error');
+        } else {
+          updateStatus('WebGPU error. Try disabling WebGPU in browser settings', 'error');
+        }
+      } else if (isFirefox && (message.includes('Aborted') || message.includes('92195288'))) {
+        updateStatus('Firefox issue: Disable WebGPU in about:config and reload', 'error');
+      } else if (message.includes('WASM') || message.includes('backend')) {
+        updateStatus('Backend error - try Chrome/Edge for better compatibility', 'error');
+      } else {
+        updateStatus('Error: ' + message.substring(0, 100), 'error');
+      }
+
       loadModelButton.disabled = false;
       loadModelButton.textContent = 'Load Model';
     }
   });
+
+  const clearCacheButton = document.getElementById('clear-cache');
+  if (clearCacheButton) {
+    clearCacheButton.addEventListener('click', async () => {
+      updateStatus('Clearing cache...');
+      clearCacheButton.disabled = true;
+
+      try {
+        const cachesToDelete = await caches.keys();
+        for (const cacheName of cachesToDelete) {
+          await caches.delete(cacheName);
+          console.log('[Demo] Deleted cache:', cacheName);
+        }
+
+        updateStatus('Cache cleared. Reload page and try loading model again.', 'warning');
+        setTimeout(() => {
+          if (confirm('Reload page now?')) {
+            window.location.reload();
+          }
+        }, 500);
+      } catch (error) {
+        console.error('[Demo] Error clearing cache:', error);
+        updateStatus('Error clearing cache: ' + error.message, 'error');
+      }
+
+      clearCacheButton.disabled = false;
+    });
+  }
 
   const testButton = document.getElementById('test-translation');
   const testResult = document.getElementById('test-result');

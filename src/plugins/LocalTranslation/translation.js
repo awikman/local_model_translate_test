@@ -18,6 +18,13 @@ function isNLLBModel(modelId) {
   return modelId.includes('nllb-200');
 }
 
+function isWebGPUAvailable() {
+  if (typeof navigator !== 'undefined' && navigator.gpu) {
+    return true;
+  }
+  return false;
+}
+
 export class TranslationService {
   static instance = null;
 
@@ -30,10 +37,10 @@ export class TranslationService {
     this.bytesLoaded = 0;
     this.fileProgress = {};
 
-    // Use pipeline from window scope (loaded in HTML)
+    // Use pipeline from window scope (loaded in HTML via @huggingface/transformers v3)
     if (typeof window.transformersPipeline !== 'function') {
       console.error('[Translation] transformersPipeline not found on window!');
-      console.error('[Translation] Make sure transformers.js loaded before this module');
+      console.error('[Translation] Make sure transformers.js v3 loaded before this module');
     }
   }
 
@@ -98,17 +105,20 @@ export class TranslationService {
 
     try {
       log('Loading model:', modelId);
-      log('Using pipeline from window.transformersPipeline');
+      log('Using pipeline from window.transformersPipeline (v3)');
 
+      const useWebGPU = isWebGPUAvailable();
+      log('Device: WebGPU available =', useWebGPU);
+
+      // Use auto-detection (let transformers.js decide)
+      // Don't explicitly set device - let it use what works
       this.pipeline = await pipeline('translation', modelId, {
         progress_callback: (progress) => {
           if (this.progressCallback) {
             const percentage = this._calculateOverallProgress(progress);
             this.progressCallback(percentage, progress);
           }
-        },
-        device: 'webgpu',
-        dtype: 'q4'
+        }
       });
 
       if (this.progressCallback) {
@@ -124,12 +134,59 @@ export class TranslationService {
       return this.pipeline;
     } catch (error) {
       this.isLoading = false;
-      console.error('[Translation] Error loading model:', error);
-      throw error;
+      const errorMessage = error.message || String(error);
+      console.error('[Translation] Error loading model:', errorMessage);
+
+      // Check if WebGPU might be enabled but failing
+      const hasWebGPU = isWebGPUAvailable();
+      const webGPUFailure = errorMessage.includes('92195288') ||
+                           errorMessage.includes('Aborted') ||
+                           errorMessage.includes('WEBGPU');
+
+      if (hasWebGPU && webGPUFailure) {
+        console.warn('[Translation] WebGPU appears enabled but failed. Suggest disabling it.');
+        log('WebGPU enabled but failed. Try disabling WebGPU in browser settings.');
+
+        throw new Error('WebGPU enabled but failed to load model. ' +
+                        'Please disable WebGPU in your browser and reload the page. ' +
+                        '(This is a known Firefox issue with ONNX Runtime.)');
+      }
+
+      // Regular fallback to WASM
+      log('Trying WASM fallback...');
+
+      try {
+        this.pipeline = await pipeline('translation', modelId, {
+          progress_callback: (progress) => {
+            if (this.progressCallback) {
+              const percentage = this._calculateOverallProgress(progress);
+              this.progressCallback(percentage, progress);
+            }
+          },
+          device: 'wasm',
+          dtype: 'q4'
+        });
+
+        if (this.progressCallback) {
+          this.progressCallback(100, { status: 'ready', name: modelId });
+        }
+
+        this.currentModelId = modelId;
+        this.isLoading = false;
+
+        const duration = endTimer('load-model', startTime);
+        log('Model loaded successfully (WASM):', modelId, 'in', duration, 'ms');
+
+        return this.pipeline;
+      } catch (wasmError) {
+        this.isLoading = false;
+        console.error('[Translation] WASM fallback failed:', wasmError);
+        throw new Error('Model load failed. Clear cache and try again, or use Chrome/Edge.');
+      }
     }
   }
 
-  async translate(text, targetLanguage, sourceLanguage = 'eng_Latn') {
+  async translate(text, targetLanguage, sourceLanguage = 'en') {
     if (!this.pipeline) {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
