@@ -1,44 +1,93 @@
 import { ClassicEditor, Essentials, Paragraph, Bold, Italic } from 'ckeditor5';
-import LocalTranslation from '../plugins/LocalTranslation/plugin.js';
-import { MODELS, DEFAULT_MODEL, getModelById, getLanguageCode } from '../utils/models.js';
-import { getConfig, saveConfig, getSourceLanguage, saveSourceLanguage } from '../utils/storage.js';
-import { log } from '../utils/logger.js';
+import LocalTranslation from '../src/plugins/LocalTranslation/plugin.js';
+import { MODELS, DEFAULT_MODEL, getModelById, getLanguageCode } from '../src/utils/models.js';
+import { getConfig, saveConfig, getSourceLanguage, saveSourceLanguage } from '../src/utils/storage.js';
+import { log } from '../src/utils/logger.js';
+
+console.log('[DEBUG] demo.js imported');
+console.log('[DEBUG] MODELS:', MODELS);
+console.log('[DEBUG] MODELS length:', MODELS?.length);
 
 let editor = null;
 let currentModelId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[Demo] DOM Content Loaded');
+  console.log('[Demo] Current URL:', window.location.href);
+  console.log('[Demo] Browser:', navigator.userAgent);
+  
   log('Demo initialized');
   
-  await initializeModelSelector();
-  await initializeLanguageSelectors();
-  await initializeEditor();
-  setupEventListeners();
+  try {
+    await initializeModelSelector();
+    console.log('[Demo] Model selector initialized');
+    
+    await initializeLanguageSelectors();
+    console.log('[Demo] Language selectors initialized');
+    
+    await initializeEditor();
+    console.log('[Demo] Editor initialization started');
+    
+    setupEventListeners();
+    console.log('[Demo] Event listeners set up');
+  } catch (error) {
+    console.error('[Demo] Fatal error during initialization:', error);
+  }
 });
 
 async function initializeModelSelector() {
+  console.log('[DEBUG] initializeModelSelector() called');
+  
   const select = document.getElementById('model-select');
   const modelInfo = document.getElementById('model-info');
+  
+  console.log('[DEBUG] select element:', select);
+  console.log('[DEBUG] modelInfo element:', modelInfo);
+  
   const config = getConfig();
-
+  console.log('[DEBUG] config:', config);
+  console.log('[DEBUG] DEFAULT_MODEL:', DEFAULT_MODEL);
+  
   currentModelId = config.modelId || DEFAULT_MODEL;
-
-  MODELS.forEach(model => {
+  console.log('[DEBUG] currentModelId:', currentModelId);
+  
+  console.log('[DEBUG] Starting MODELS.forEach loop...');
+  console.log('[DEBUG] MODELS array:', MODELS);
+  
+  if (!MODELS || !Array.isArray(MODELS)) {
+    console.error('[DEBUG] MODELS is not an array!', MODELS);
+    return;
+  }
+  
+  MODELS.forEach((model, index) => {
+    console.log(`[DEBUG] Processing model ${index}:`, model);
+    
     const optgroup = document.createElement('optgroup');
     optgroup.label = model.name;
-
-    model.variants.forEach(variant => {
-      const option = document.createElement('option');
-      option.value = variant.modelId;
-      option.textContent = `${variant.name} (${variant.size})`;
-      if (variant.modelId === currentModelId) {
-        option.selected = true;
-      }
-      optgroup.appendChild(option);
-    });
-
+    console.log(`[DEBUG] Created optgroup with label: ${model.name}`);
+    
+    if (model.variants && Array.isArray(model.variants)) {
+      model.variants.forEach(variant => {
+        console.log(`[DEBUG]   Variant: ${variant.name} (${variant.size}) - modelId: ${variant.modelId}`);
+        
+        const option = document.createElement('option');
+        option.value = variant.modelId;
+        option.textContent = `${variant.name} (${variant.size})`;
+        if (variant.modelId === currentModelId) {
+          option.selected = true;
+          console.log(`[DEBUG]   Selected: ${variant.modelId}`);
+        }
+        optgroup.appendChild(option);
+      });
+    } else {
+      console.warn(`[DEBUG] Model ${index} has no valid variants:`, model);
+    }
+    
     select.appendChild(optgroup);
+    console.log(`[DEBUG] Appended optgroup to select. Select children count: ${select.children.length}`);
   });
+  
+  console.log('[DEBUG] MODELS.forEach completed. Total optgroups:', select.children.length);
 
   addCustomModelOption(select);
   updateModelInfo(currentModelId);
@@ -82,11 +131,18 @@ async function initializeLanguageSelectors() {
 }
 
 async function initializeEditor() {
+  const editorDiv = document.getElementById('editor');
+  const loadingDiv = document.getElementById('editor-loading');
+  const errorDiv = document.getElementById('editor-error');
+  
   try {
     log('Initializing CKEditor5...');
-
-    editor = await ClassicEditor.create(document.querySelector('#editor'), {
-      licenseKey: 'GPL',
+    
+    editorDiv.style.display = 'none';
+    loadingDiv.style.display = 'block';
+    errorDiv.style.display = 'none';
+    
+    editor = await ClassicEditor.create(editorDiv, {
       plugins: [
         Essentials,
         Paragraph,
@@ -97,10 +153,17 @@ async function initializeEditor() {
       toolbar: ['undo', 'redo', '|', 'bold', 'italic', '|', 'translateButton'],
       placeholder: 'Start typing... Select text and click Translate'
     });
-
+    
+    loadingDiv.style.display = 'none';
+    editorDiv.style.display = 'block';
+    
     log('CKEditor5 initialized successfully');
   } catch (error) {
     console.error('[Demo] Error initializing editor:', error);
+    
+    loadingDiv.style.display = 'none';
+    errorDiv.style.display = 'block';
+    
     updateStatus('Error: Failed to initialize editor', 'error');
   }
 }

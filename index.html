@@ -3,17 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>CKEditor5 Local Translation Demo</title>
-  <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.3.0/ckeditor5.css">
+  <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/43.1.1/ckeditor5.css">
   <link rel="stylesheet" href="demo/styles.css">
   
   <script type="importmap">
 {
   "imports": {
-    "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/47.3.0/ckeditor5.js",
-    "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@3.0.0/dist/transformers.min.js"
+    "ckeditor5": "https://cdn.ckeditor.com/ckeditor5/43.1.1/ckeditor5.js"
   }
 }
+  </script>
+
+  <!-- Preload transformers.js environment -->
+  <script type="module">
+    import { env, pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+    
+    // Configure transformers.js to use Hugging Face Hub
+    env.allowRemoteModels = true;
+    env.allowLocalModels = false;
+    
+    window.transformersPipeline = pipeline;
+    window.transformersEnv = env;
+    
+    console.log('[DEBUG] transformers.js loaded, pipeline:', typeof pipeline);
+    console.log('[DEBUG] transformers.js env configured, allowRemoteModels:', env.allowRemoteModels);
   </script>
 </head>
 <body>
@@ -71,6 +89,21 @@
           <li>English ↔ Swedish</li>
         </ul>
         <p><em>Translation models will be loaded on first use, which may take a few minutes depending on your connection and computer.</em></p>
+      </div>
+      <div id="editor-loading" class="editor-loading" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Loading CKEditor5...</p>
+        <p class="loading-hint">If this takes more than 10 seconds, check the browser console (F12) for errors.</p>
+      </div>
+      <div id="editor-error" class="editor-error" style="display: none;">
+        <h3>Error Loading Editor</h3>
+        <p>Failed to initialize CKEditor5. Please check the browser console (F12) for details.</p>
+        <p class="error-hint">Common issues:</p>
+        <ul>
+          <li>Browser incompatible (need Firefox 146+, Chrome 89+, or Safari 16.4+)</li>
+          <li>JavaScript modules blocked by security settings</li>
+          <li>CORS/COOP policy blocking CDN resources</li>
+        </ul>
       </div>
     </main>
   </div>

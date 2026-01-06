@@ -1,14 +1,19 @@
-import { pipeline } from '@huggingface/transformers';
-import { log, startTimer, endTimer } from '../utils/logger.js';
+import { log, startTimer, endTimer } from '../../utils/logger.js';
 
 export class TranslationService {
   static instance = null;
-  
+
   constructor() {
     this.pipeline = null;
     this.currentModelId = null;
     this.isLoading = false;
     this.progressCallback = null;
+
+    // Use pipeline from window scope (loaded in HTML)
+    if (typeof window.transformersPipeline !== 'function') {
+      console.error('[Translation] transformersPipeline not found on window!');
+      console.error('[Translation] Make sure transformers.js loaded before this module');
+    }
   }
 
   static getInstance() {
@@ -33,11 +38,17 @@ export class TranslationService {
       return null;
     }
 
+    const pipeline = window.transformersPipeline;
+    if (!pipeline) {
+      throw new Error('transformers.js not loaded. Check browser console.');
+    }
+
     this.isLoading = true;
     const startTime = startTimer('load-model');
 
     try {
       log('Loading model:', modelId);
+      log('Using pipeline from window.transformersPipeline');
 
       this.pipeline = await pipeline('translation', modelId, {
         progress_callback: (progress) => {

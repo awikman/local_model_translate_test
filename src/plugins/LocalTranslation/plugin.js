@@ -1,7 +1,7 @@
 import { Plugin } from 'ckeditor5';
 import TranslationUI from './ui.js';
 import TranslateCommand from './command.js';
-import TranslationService from './translation.js';
+import { TranslationService } from './translation.js';
 import { getConfig, saveConfig } from '../../utils/storage.js';
 import { DEFAULT_MODEL } from '../../utils/models.js';
 import { log, warn } from '../../utils/logger.js';

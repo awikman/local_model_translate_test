@@ -1,6 +1,6 @@
 import { Plugin } from 'ckeditor5';
-import { ButtonView, createDropdown } from 'ckeditor5';
-import { getLanguageName, getLanguageCode } from '../../utils/models.js';
+import { createDropdown } from 'ckeditor5';
+import { getLanguageName } from '../../utils/models.js';
 import { getSourceLanguage } from '../../utils/storage.js';
 import { log } from '../../utils/logger.js';
 
@@ -14,11 +14,16 @@ export default class TranslationUI extends Plugin {
 
     editor.ui.componentFactory.add('translateButton', locale => {
       const dropdownView = createDropdown(locale);
-      const buttonView = this._createDropdownButton(locale);
+      const buttonView = dropdownView.buttonView;
 
-      dropdownView.buttonView = buttonView;
+      buttonView.label = 'Translate';
+      buttonView.tooltip = 'Translate to selected language';
+      buttonView.icon = this._getTranslateIcon();
+      buttonView.class = 'ck-translate-button';
+
       dropdownView.isEnabled = true;
-      dropdownView.panelView.children.add(this._createLanguageList(locale));
+
+      this._addLanguageOptions(dropdownView, locale, editor);
 
       buttonView.on('execute', () => {
         dropdownView.isOpen = !dropdownView.isOpen;
@@ -28,48 +33,28 @@ export default class TranslationUI extends Plugin {
     });
   }
 
-  _createDropdownButton(locale) {
-    const button = new ButtonView(locale);
-
-    button.set({
-      label: 'Translate',
-      tooltip: 'Translate to selected language',
-      icon: this._getTranslateIcon(),
-      class: 'ck-translate-button'
-    });
-
-    return button;
-  }
-
-  _createLanguageList(locale) {
+  _addLanguageOptions(dropdownView, locale, editor) {
     const sourceLang = getSourceLanguage();
     const targetLanguages = ['fi', 'sv', 'no', 'da', 'en'];
-    const list = [];
 
     for (const targetCode of targetLanguages) {
       if (targetCode !== sourceLang) {
-        const listItem = new ButtonView(locale);
         const langName = getLanguageName(targetCode);
+        const label = targetCode.toUpperCase() + ' - ' + langName;
 
-        listItem.set({
-          label: langName,
-          withText: true,
-          class: 'ck-translate-language-option'
-        });
+        const button = editor.ui.componentFactory.add('button', label);
 
-        listItem.on('execute', () => {
+        button.on('execute', () => {
           log('Translate to:', targetCode);
-          this.editor.execute('translate', { targetLanguage: targetCode });
+          editor.execute('translate', { targetLanguage: targetCode });
         });
 
-        list.push(listItem);
+        dropdownView.panelView.children.add(button);
       }
     }
-
-    return list;
   }
 
   _getTranslateIcon() {
-    return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2L3 7v11l7 5 7-5V7l-7-5z"/></svg>`;
+    return '<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2L3 7v11l7 5 7-5V7l-7-5z"/></svg>';
   }
 }

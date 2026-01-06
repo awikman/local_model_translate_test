@@ -147,3 +147,52 @@ button.secondary:hover {
 .ck-editor__editable {
   min-height: 400px !important;
 }
+
+.editor-loading,
+.editor-error {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #198754;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-hint,
+.error-hint {
+  font-size: 14px;
+  color: #666;
+  margin: 20px 0 0 0;
+}
+
+.error-hint {
+  margin: 20px 0 0 20px;
+  text-align: left;
+}
+
+.editor-error h3 {
+  color: #dc3545;
+  margin-bottom: 15px;
+}
+
+.editor-error ul {
+  text-align: left;
+  color: #555;
+  margin-top: 20px;
+  line-height: 1.6;
+}

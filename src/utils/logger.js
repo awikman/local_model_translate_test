@@ -18,16 +18,33 @@ export function performance(startMark, endMark) {
 
 export function startTimer(name) {
   const mark = `${name}-start-${Date.now()}`;
-  performance.mark(mark);
+  if (typeof performance.mark === 'function') {
+    performance.mark(mark);
+  } else {
+    console.warn('[Logger] performance.mark not available');
+  }
   return mark;
 }
 
 export function endTimer(name, startMark) {
   const endMark = `${name}-end-${Date.now()}`;
-  performance.mark(endMark);
-  const duration = performance.measure(name, startMark, endMark).duration;
-  console.log(`[Translation] ${name}: ${duration.toFixed(2)}ms`);
-  performance.clearMarks(startMark);
-  performance.clearMarks(endMark);
+  const startTime = Date.now();
+  
+  if (typeof performance.mark === 'function' && typeof performance.measure === 'function') {
+    try {
+      performance.mark(endMark);
+      const duration = performance.measure(name, startMark, endMark).duration;
+      console.log(`[Translation] ${name}: ${duration.toFixed(2)}ms`);
+      performance.clearMarks(startMark);
+      performance.clearMarks(endMark);
+      return duration;
+    } catch (e) {
+      console.warn('[Logger] Performance measurement failed:', e);
+    }
+  }
+  
+  // Fallback timing
+  const duration = Date.now() - startTime;
+  console.log(`[Translation] ${name}: ${duration.toFixed(2)}ms (fallback timing)`);
   return duration;
 }
