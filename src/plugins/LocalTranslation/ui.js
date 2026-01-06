@@ -10,10 +10,12 @@ export default class TranslationUI extends Plugin {
 
   init() {
     const editor = this.editor;
+    this._dropdownView = null;
 
     editor.ui.componentFactory.add('translateButton', locale => {
       console.log('[UI] Creating translateButton dropdown');
       const dropdownView = createDropdown(locale);
+      this._dropdownView = dropdownView;
       const translateCommand = editor.commands.get('translate');
 
       dropdownView.buttonView.set({
@@ -40,6 +42,12 @@ export default class TranslationUI extends Plugin {
 
       window.addEventListener('translation-status', updateTooltip);
       window.addEventListener('translation-ready', updateTooltip);
+
+      window.addEventListener('translation-complete', () => {
+        if (this._dropdownView && this._dropdownView.isOpen) {
+          this._dropdownView.isOpen = false;
+        }
+      });
 
       this._addLanguageOptions(dropdownView, locale, editor, translateCommand);
 

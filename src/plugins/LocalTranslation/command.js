@@ -90,6 +90,9 @@ export default class TranslateCommand extends Command {
         detail: { translating: false }
       }));
       console.log('[DEBUG] Dispatched translation-status done event');
+
+      window.dispatchEvent(new CustomEvent('translation-complete'));
+      console.log('[DEBUG] Dispatched translation-complete event');
     }
   }
 

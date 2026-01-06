@@ -326,6 +326,16 @@ function setupEventListeners() {
     }
   });
 
+  window.addEventListener('translation-complete', () => {
+    const doneEl = document.getElementById('translation-done');
+    if (doneEl) {
+      doneEl.classList.add('show');
+      setTimeout(() => {
+        doneEl.classList.remove('show');
+      }, 10000);
+    }
+  });
+
   window.addEventListener('translation-ready', (e) => {
     const { modelId } = e.detail;
     updateStatus('Ready - Model loaded');
