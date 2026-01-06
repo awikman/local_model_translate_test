@@ -1,8 +1,12 @@
 # CKEditor5 Local Translation Plugin
 
-## What This Is
-
 Vibe code demo. Nothing to see here, just playing around...
+
+This demo got its inspiration from ckeditor translation module, that calls the OpenAI API to do the translations. What if we just ran the in the users browser? No need for API keys.
+
+live demo should be available at https://ai.wikman.es/ or https://awikman.github.io/local_model_translate_test/
+
+## What This Is
 
 A CKEditor5 plugin that runs translation models **100% in your browser** using transformers.js and WebGPU/WebAssembly. No API calls, no server needed.
 
@@ -172,6 +176,48 @@ Deployment is automatic - push to `main` branch and GitHub Pages deploys from `/
 - [ ] Remove or implement `updateUI()` function in `demo/demo.js` (currently just logs)
 - [ ] Standardize logging to use `log()` from utils instead of `console.log('[DEBUG]', ...)`
 - [ ] Consider splitting large `demo/demo.js` into separate modules
+
+### Security Improvements
+
+- [ ] **XSS Vulnerability**: Add DOMPurify sanitization before inserting translated text into CKEditor5 (command.js:170-171)
+- [ ] Add input validation for custom model ID (demo.js custom model input)
+- [ ] Add Content Security Policy headers to server.py for production
+
+### Performance Improvements
+
+- [ ] Add model preloading on page load (currently requires manual "Load Model" click)
+- [ ] Add Service Worker for offline caching of models
+- [ ] Add IndexedDB storage for translation history/memory
+- [ ] Implement model lazy loading with priority queue
+
+### UX Improvements
+
+- [ ] Add progress indicator during translation (not just model loading)
+- [ ] Add cancel button for in-progress translations
+- [ ] Add keyboard shortcuts (e.g., Ctrl+Shift+T to translate)
+- [ ] Add translation history panel
+- [ ] Add undo/redo for translations
+- [ ] Show translation confidence scores if available from model
+- [ ] Add toast notifications instead of status bar updates
+
+### Functionality Gaps
+
+- [ ] Add automatic source language detection using character heuristics
+- [ ] Add batch translation for multiple selections
+- [ ] Add translation memory for repeated phrases
+- [ ] Add favorite/useful translations collection
+- [ ] Support translating entire document vs selected text toggle
+- [ ] Add support for more language pairs in source selector
+
+### Code Quality
+
+- [ ] Add debug mode flag to disable debug logging in production
+- [ ] Add error boundaries and try/catch throughout
+- [ ] Refactor TranslationService to not rely on window.transformersPipeline global
+- [ ] Add TypeScript for type safety
+- [ ] Add unit tests (Jest/Vitest)
+- [ ] Add integration tests (Playwright)
+- [ ] Add ESLint configuration
 
 1. Enter model ID in "Custom Model" field
 2. Click "Apply Custom"
