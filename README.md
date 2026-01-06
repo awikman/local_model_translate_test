@@ -1,14 +1,8 @@
 # CKEditor5 Local Translation Plugin
 
-## Quick Start
-
-```bash
-python3 server.py
-```
-
-Then open: http://localhost:8000
-
 ## What This Is
+
+Vibe code demo. Nothing to see here, just playing around...
 
 A CKEditor5 plugin that runs translation models **100% in your browser** using transformers.js and WebGPU/WebAssembly. No API calls, no server needed.
 
