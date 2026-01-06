@@ -1,5 +1,5 @@
 import { Plugin } from 'ckeditor5';
-import { createDropdown } from 'ckeditor5';
+import { ButtonView, createDropdown } from 'ckeditor5';
 import { getLanguageName } from '../../utils/models.js';
 import { getSourceLanguage } from '../../utils/storage.js';
 import { log } from '../../utils/logger.js';
@@ -16,10 +16,11 @@ export default class TranslationUI extends Plugin {
       const dropdownView = createDropdown(locale);
       const buttonView = dropdownView.buttonView;
 
-      buttonView.label = 'Translate';
-      buttonView.tooltip = 'Translate to selected language';
-      buttonView.icon = this._getTranslateIcon();
-      buttonView.class = 'ck-translate-button';
+      buttonView.set({
+        label: 'Translate',
+        tooltip: 'Translate to selected language',
+        icon: this._getTranslateIcon()
+      });
 
       dropdownView.isEnabled = true;
 
@@ -42,7 +43,11 @@ export default class TranslationUI extends Plugin {
         const langName = getLanguageName(targetCode);
         const label = targetCode.toUpperCase() + ' - ' + langName;
 
-        const button = editor.ui.componentFactory.add('button', label);
+        const button = new ButtonView(locale);
+        button.set({
+          label: label,
+          withText: true
+        });
 
         button.on('execute', () => {
           log('Translate to:', targetCode);
