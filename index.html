@@ -254,6 +254,7 @@
         <p><b>Security Note:</b> This demo has an XSS vulnerability. The translation model's output is inserted directly into the editor without sanitization.</p>
         <p>WebGPU provides GPU acceleration when supported by the browser. Use the backend toggle to switch to WASM if models fail to load. Models are downloaded from Hugging Face and cached in the browser for subsequent use.</p>
         <p>This project demonstrates the feasibility of local, privacy-preserving translation directly in the browser without relying on external translation services.</p>
+        <p><b>Tip:</b> WebGPU isn't always faster—smaller models like NLLB often run faster with WASM. Experiment with both backends to find what works best for your device.</p>
       </div>
     </main>
   </div>
