@@ -189,6 +189,59 @@ Deployment is automatic - push to `main` branch and GitHub Pages deploys from `/
 - [ ] Add Service Worker for offline caching of models
 - [ ] Add IndexedDB storage for translation history/memory
 - [ ] Implement model lazy loading with priority queue
+- [ ] **Streaming Translation**: Implement TextStreamer for LLM-based translations to show output token-by-token as it's generated
+
+### LLM Translation Support
+
+The following LLM models have been tested or identified for use with transformers.js v3:
+
+#### Llama Models (Xenova's ONNX Conversions) - **TEST THESE**
+These are older Llama models converted by Xenova that should work:
+- **Xenova/llama-68m** (~140MB) - Tiny Llama, ONNX format ✅ Should work
+- **Xenova/llama-160m** (~320MB) - Small Llama, ONNX format ✅ Should work
+
+These use the `text-generation` pipeline with prompt-based translation.
+
+#### Not Working (Unsupported Architectures)
+- **Phi-3-mini** - Error: "Unsupported model type: phi3"
+- **Gemma-3-270m/1b** - Error: "Unsupported model type: gemma3_text"
+- **SmolLM3-3B-ONNX** - Error: "Unsupported model type: smollm3"
+
+**Why some fail:** transformers.js v3 has a limited set of supported model architectures. Newer LLMs like Phi-3 and Gemma 3 use architectures that are not yet implemented.
+
+**Working approach:** Use smaller, older models like llama-68m/160m that Xenova has already converted to ONNX.
+
+#### Adding LLM Models
+
+LLMs require **prompt-based translation** (not direct translation pipeline). Add to `MODELS` in `src/utils/models.js`:
+
+```javascript
+{
+  family: 'llama',
+  name: 'Llama (Chat LLM)',
+  variants: [
+    {
+      id: '160m',
+      name: '160M (~320MB, ONNX)',
+      modelId: 'Xenova/llama-160m',
+      description: 'Small Llama, prompt-based translation',
+      usePrompt: true  // Required: marks as LLM requiring prompts
+    }
+  ]
+}
+```
+
+Translation uses this prompt template:
+```
+You are a professional translator. You ONLY output the actual translation, no explanations.
+Source language: {detected from context}
+Target language: {target}
+Preserve HTML formatting and structure.
+Translate this:
+{html content}
+
+Translation:
+```
 
 ### UX Improvements
 

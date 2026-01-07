@@ -24,6 +24,19 @@ export const MODELS = [
     ]
   },
   {
+    family: 't5',
+    name: 'T5 (Text2Text)',
+    variants: [
+      {
+        id: 'small',
+        name: 'Small (~60MB)',
+        modelId: 'Xenova/t5-small',
+        description: 'Tiny text2text model, fast but basic',
+        task: 'text2text-generation'
+      }
+    ]
+  },
+  {
     family: 'opus-mt',
     name: 'OpusMT (Language Pairs)',
     variants: [
@@ -70,6 +83,33 @@ export function getModelById(modelId) {
 export function modelRequiresWebGPU(modelId) {
   const model = getModelById(modelId);
   return model?.requiresWebGPU === true;
+}
+
+export function modelUsesPrompt(modelId) {
+  const model = getModelById(modelId);
+  return model?.usePrompt === true;
+}
+
+export function getModelTask(modelId) {
+  const model = getModelById(modelId);
+  if (model?.usePrompt) {
+    return 'text-generation';
+  }
+  return model?.task || 'translation';
+}
+
+export function getPromptForModel(modelId, sourceLang, targetLang, text) {
+  const sourceLanguage = getLanguageName(sourceLang) || sourceLang;
+  const targetLanguage = getLanguageName(targetLang) || targetLang;
+
+  return `You are a professional translator. You ONLY output the actual translation, no explanations.
+Source language: ${sourceLanguage} (detected from context)
+Target language: ${targetLanguage}
+Preserve HTML formatting and structure.
+Translate this:
+${text}
+
+Translation:`;
 }
 
 export function getLanguageCode(name) {

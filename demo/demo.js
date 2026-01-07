@@ -158,9 +158,17 @@ function updateModelInfo(modelId) {
     const displayName = nameMatch ? nameMatch[1] : model.name;
     const size = nameMatch ? `(${nameMatch[2]})` : '';
 
+    let note = '';
+    if (model.usePrompt) {
+      note = '<br><span class="model-warning">LLM prompt-based (experimental)</span>';
+    } else if (model.task === 'text2text-generation') {
+      note = '<br><span class="model-warning">Text2Text (basic quality)</span>';
+    }
+
     modelInfo.innerHTML = `
       <strong>${displayName}</strong> <span class="model-size">${size}</span><br>
       ${model.description}
+      ${note}
     `;
   } else {
     modelInfo.innerHTML = 'Custom model';

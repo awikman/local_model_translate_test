@@ -1,4 +1,5 @@
 import { log, startTimer, endTimer } from '../../utils/logger.js';
+import { modelUsesPrompt, getPromptForModel, getModelTask } from '../../utils/models.js';
 
 const NLLB_LANGUAGE_CODES = {
   'en': 'eng_Latn',
@@ -16,6 +17,14 @@ function toNLLBCode(code) {
 
 function isNLLBModel(modelId) {
   return modelId.includes('nllb-200');
+}
+
+function isT5Model(modelId) {
+  return modelId.includes('t5');
+}
+
+function isLlamaModel(modelId) {
+  return modelId.includes('llama');
 }
 
 function isWebGPUAvailable() {
@@ -110,9 +119,12 @@ export class TranslationService {
       const useWebGPU = isWebGPUAvailable();
       log('Device: WebGPU available =', useWebGPU);
 
+      const task = getModelTask(modelId);
+      log('Loading pipeline with task:', task);
+
       // Use auto-detection (let transformers.js decide)
       // Don't explicitly set device - let it use what works
-      this.pipeline = await pipeline('translation', modelId, {
+      this.pipeline = await pipeline(task, modelId, {
         progress_callback: (progress) => {
           if (this.progressCallback) {
             const percentage = this._calculateOverallProgress(progress);
@@ -191,6 +203,18 @@ export class TranslationService {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
 
+    const usePromptModel = modelUsesPrompt(this.currentModelId);
+
+    if (usePromptModel) {
+      return await this._translateWithPrompt(text, targetLanguage, sourceLanguage);
+    }
+
+    const useT5 = isT5Model(this.currentModelId);
+
+    if (useT5) {
+      return await this._translateWithT5(text, targetLanguage, sourceLanguage);
+    }
+
     const useNLLB = isNLLBModel(this.currentModelId);
     const tgtLang = useNLLB ? toNLLBCode(targetLanguage) : targetLanguage;
     const srcLang = useNLLB ? toNLLBCode(sourceLanguage) : sourceLanguage;
@@ -211,6 +235,114 @@ export class TranslationService {
       return result[0]?.translation_text || result.translation_text || '';
     } catch (error) {
       console.error('[Translation] Error during translation:', error);
+      throw error;
+    }
+  }
+
+  async _translateWithPrompt(text, targetLanguage, sourceLanguage) {
+    const prompt = getPromptForModel(this.currentModelId, sourceLanguage, targetLanguage, text);
+
+    console.log('[DEBUG] Prompt-based translation:', {
+      model: this.currentModelId,
+      targetLang: targetLanguage,
+      promptLength: prompt.length
+    });
+
+    try {
+      const startTime = performance.now();
+
+      const result = await this.pipeline(prompt, {
+        max_new_tokens: 1024,
+        temperature: 0.1,
+        do_sample: false
+      });
+
+      const duration = performance.now() - startTime;
+      console.log('[DEBUG] Prompt pipeline returned in', duration.toFixed(0), 'ms');
+
+      const generatedText = result[0]?.generated_text || result.generated_text || '';
+      log('LLM translation complete in', duration.toFixed(0), 'ms');
+
+      const translation = generatedText.split('Translation:').pop()?.trim() || generatedText.trim();
+
+      return translation;
+    } catch (error) {
+      console.error('[Translation] Error during prompt-based translation:', error);
+      throw error;
+    }
+  }
+
+  async _translateWithT5(text, targetLanguage, sourceLanguage) {
+    const srcLang = sourceLanguage || 'en';
+    const tgtLang = targetLanguage;
+
+    const t5Input = `translate ${srcLang} to ${tgtLang}: ${text}`;
+
+    console.log('[DEBUG] T5 translation:', {
+      model: this.currentModelId,
+      input: t5Input.substring(0, 50) + '...'
+    });
+
+    try {
+      const startTime = performance.now();
+
+      const result = await this.pipeline(t5Input, {
+        max_new_tokens: 512
+      });
+
+      const duration = performance.now() - startTime;
+      console.log('[DEBUG] T5 pipeline returned in', duration.toFixed(0), 'ms');
+      log('T5 translation complete in', duration.toFixed(0), 'ms');
+
+      console.log('[DEBUG] T5 raw result:', result);
+
+      let translation = '';
+      if (Array.isArray(result)) {
+        translation = result[0]?.generated_text || result[0] || '';
+      } else if (typeof result === 'string') {
+        translation = result;
+      } else {
+        translation = result.generated_text || result[0]?.translation_text || '';
+      }
+
+      console.log('[DEBUG] T5 translation result:', translation);
+
+      return translation;
+    } catch (error) {
+      console.error('[Translation] Error during T5 translation:', error);
+      throw error;
+    }
+  }
+
+  async _translateWithPrompt(text, targetLanguage, sourceLanguage) {
+    const prompt = getPromptForModel(this.currentModelId, sourceLanguage, targetLanguage, text);
+
+    console.log('[DEBUG] Prompt-based translation:', {
+      model: this.currentModelId,
+      targetLang: targetLanguage,
+      promptLength: prompt.length
+    });
+
+    try {
+      const startTime = performance.now();
+
+      const result = await this.pipeline(prompt, {
+        max_new_tokens: 1024,
+        temperature: 0.1,
+        do_sample: false
+      });
+
+      const duration = performance.now() - startTime;
+      console.log('[DEBUG] Prompt pipeline returned in', duration.toFixed(0), 'ms');
+
+      const generatedText = result[0]?.generated_text || result.generated_text || '';
+      log('LLM translation complete in', duration.toFixed(0), 'ms');
+
+      const translation = generatedText.split('Translation:').pop()?.trim() || generatedText.trim();
+
+      return translation;
+    } catch (error) {
+      console.error('[Translation] Error during prompt-based translation:', error);
       throw error;
     }
   }
