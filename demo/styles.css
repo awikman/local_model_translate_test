@@ -145,6 +145,13 @@ button.secondary:hover {
   font-weight: 500;
 }
 
+.model-warning {
+  display: block;
+  margin-top: 6px;
+  color: #cc8400;
+  font-style: italic;
+}
+
 .status {
   font-size: 13px;
   padding: 10px;
