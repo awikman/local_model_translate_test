@@ -65,6 +65,54 @@ export const MODELS = [
         description: 'Specialized for Swedish to English'
       }
     ]
+  },
+  {
+    family: 'puter',
+    name: 'Puter AI (External API)',
+    variants: [
+      {
+        id: 'gpt-5-nano',
+        name: 'GPT-5 nano (Fast)',
+        modelId: 'puter:gpt-5-nano',
+        description: 'Fast and efficient translation',
+        isExternal: true
+      },
+      {
+        id: 'gpt-4o',
+        name: 'GPT-4o (High Quality)',
+        modelId: 'puter:gpt-4o',
+        description: 'High quality translations',
+        isExternal: true
+      },
+      {
+        id: 'claude-sonnet',
+        name: 'Claude Sonnet (Balanced)',
+        modelId: 'puter:claude-sonnet-4-20250514',
+        description: 'Balanced quality and speed',
+        isExternal: true
+      },
+      {
+        id: 'deepseek',
+        name: 'DeepSeek (Economical)',
+        modelId: 'puter:deepseek-chat',
+        description: 'Cost-effective translation',
+        isExternal: true
+      },
+      {
+        id: 'gemini',
+        name: 'Gemini (Multilingual)',
+        modelId: 'puter:gemini-2.5-pro',
+        description: 'Strong multilingual support',
+        isExternal: true
+      },
+      {
+        id: 'xai',
+        name: 'xAI Grok (Creative)',
+        modelId: 'puter:grok-3',
+        description: 'Creative and contextual translations',
+        isExternal: true
+      }
+    ]
   }
 ];
 
@@ -88,6 +136,16 @@ export function modelRequiresWebGPU(modelId) {
 export function modelUsesPrompt(modelId) {
   const model = getModelById(modelId);
   return model?.usePrompt === true;
+}
+
+export function isExternalApi(modelId) {
+  if (!modelId) return false;
+  return modelId.startsWith('puter:');
+}
+
+export function getExternalModelName(modelId) {
+  if (!modelId.startsWith('puter:')) return null;
+  return modelId.replace('puter:', '');
 }
 
 export function getModelTask(modelId) {

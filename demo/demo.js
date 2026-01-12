@@ -1,6 +1,6 @@
 import { ClassicEditor, Essentials, Paragraph, Bold, Italic } from 'ckeditor5';
 import LocalTranslation from '../src/plugins/LocalTranslation/plugin.js';
-import { MODELS, DEFAULT_MODEL, getModelById, getLanguageCode } from '../src/utils/models.js';
+import { MODELS, DEFAULT_MODEL, getModelById, getLanguageCode, isExternalApi, getExternalModelName } from '../src/utils/models.js';
 import { getConfig, saveConfig, getSourceLanguage, saveSourceLanguage } from '../src/utils/storage.js';
 import { log } from '../src/utils/logger.js';
 
@@ -26,16 +26,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initializeModelSelector();
     console.log('[Demo] Model selector initialized');
 
-    await initializeLanguageSelectors();
-    console.log('[Demo] Language selectors initialized');
+    updateExternalApiWarning(currentModelId);
 
     await initializeEditor();
-    console.log('[Demo] Editor initialization started');
+
+    if (isExternalApi(currentModelId)) {
+      const plugin = editor.plugins.get('LocalTranslation');
+      plugin.getService().currentModelId = currentModelId;
+    }
+
+    await initializeLanguageSelectors();
+    console.log('[Demo] Language selectors initialized');
 
     setupEventListeners();
     console.log('[Demo] Event listeners set up');
 
-    updateStatus('Ready - Click "Load Model" to start');
+    if (isExternalApi(currentModelId)) {
+      updateStatus(`Ready - Using ${getExternalModelName(currentModelId)} external API`);
+    } else {
+      updateStatus('Ready - Click "Load Model" to start');
+    }
     updateProgressBar(0);
   } catch (error) {
     console.error('[Demo] Fatal error during initialization:', error);
@@ -153,7 +163,13 @@ function updateModelInfo(modelId) {
   const modelInfo = document.getElementById('model-info');
   const model = getModelById(modelId);
 
-  if (model) {
+  if (isExternalApi(modelId)) {
+    const modelName = getExternalModelName(modelId);
+    modelInfo.innerHTML = `
+      <strong>${modelName}</strong> <span class="model-size">(External API)</span><br>
+      Uses Puter AI cloud service for translation
+    `;
+  } else if (model) {
     const nameMatch = model.name.match(/^(.+?)\s*\((.+?)\)$/);
     const displayName = nameMatch ? nameMatch[1] : model.name;
     const size = nameMatch ? `(${nameMatch[2]})` : '';
@@ -271,6 +287,7 @@ function setupEventListeners() {
     }
 
     await changeModel(modelId);
+    updateExternalApiWarning(modelId);
   });
 
   applyCustomButton.addEventListener('click', async () => {
@@ -285,6 +302,10 @@ function setupEventListeners() {
   });
 
   loadModelButton.addEventListener('click', async () => {
+    if (isExternalApi(currentModelId)) {
+      return;
+    }
+
     loadModelButton.disabled = true;
     loadModelButton.textContent = 'Loading...';
     updateStatus('Loading model...');
@@ -358,7 +379,7 @@ function setupEventListeners() {
     const targetLang = sourceLang === 'en' ? 'fi' : 'en';
     const testText = 'Translate this text';
 
-    console.log('[DEBUG] Test button clicked:', { sourceLang, targetLang, testText });
+    console.log('[DEBUG] Test button clicked:', { sourceLang, targetLang, testText, currentModelId });
 
     testResult.innerHTML = '<em>Translating...</em>';
     testResult.className = 'test-result loading';
@@ -370,6 +391,23 @@ function setupEventListeners() {
     try {
       const plugin = editor.plugins.get('LocalTranslation');
       const service = plugin.getService();
+
+      if (isExternalApi(currentModelId)) {
+        const translated = await service.translate(testText, targetLang, sourceLang);
+        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+        const sourceDisplay = sourceLang.toUpperCase();
+        const targetDisplay = targetLang.toUpperCase();
+
+        console.log(`[DEBUG] External API test completed in ${duration}s`);
+
+        testResult.innerHTML = `
+          <strong>Test executed (${duration}s). From ${sourceDisplay} to ${targetDisplay}:</strong><br/>
+          Source: "${testText}"<br/>
+          Translation: "${translated}"
+        `;
+        testResult.className = 'test-result';
+        return;
+      }
 
       console.log('[DEBUG] Service ready:', service.isReady());
 
@@ -443,12 +481,46 @@ function setupEventListeners() {
   });
 }
 
+function updateExternalApiWarning(modelId) {
+  const warningEl = document.getElementById('external-api-warning');
+  const loadModelButton = document.getElementById('load-model');
+  const isExternal = isExternalApi(modelId);
+
+  if (isExternal) {
+    const modelName = getExternalModelName(modelId);
+    warningEl.classList.add('visible');
+    warningEl.style.display = 'flex';
+    loadModelButton.disabled = true;
+    loadModelButton.textContent = 'External API';
+    updateStatus(`Ready - Using ${modelName} external API`);
+  } else {
+    warningEl.classList.remove('visible');
+    warningEl.style.display = 'none';
+    loadModelButton.disabled = false;
+    loadModelButton.textContent = 'Load Model';
+  }
+}
+
 async function changeModel(modelId) {
   log('Changing model to:', modelId);
   updateStatus('Loading model...');
   updateProgressBar(0);
 
   const loadModelButton = document.getElementById('load-model');
+
+  if (isExternalApi(modelId)) {
+    saveConfig({ modelId });
+    currentModelId = modelId;
+
+    const plugin = editor.plugins.get('LocalTranslation');
+    plugin.getService().currentModelId = modelId;
+    editor.commands.get('translate').refresh();
+
+    updateModelInfo(modelId);
+    updateStatus('Ready - Using external API');
+    return;
+  }
+
   loadModelButton.textContent = 'Load Model';
   loadModelButton.disabled = false;
 

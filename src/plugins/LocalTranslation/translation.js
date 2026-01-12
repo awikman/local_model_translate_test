@@ -1,5 +1,5 @@
 import { log, startTimer, endTimer } from '../../utils/logger.js';
-import { modelUsesPrompt, getPromptForModel, getModelTask } from '../../utils/models.js';
+import { modelUsesPrompt, getPromptForModel, getModelTask, isExternalApi, getLanguageName } from '../../utils/models.js';
 
 const NLLB_LANGUAGE_CODES = {
   'en': 'eng_Latn',
@@ -32,6 +32,32 @@ function isWebGPUAvailable() {
     return true;
   }
   return false;
+}
+
+async function loadPuterScript() {
+  if (window.puter && window.puter.ai) {
+    return window.puter;
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://js.puter.com/v2/';
+    script.onload = () => {
+      const checkPuter = setInterval(() => {
+        if (window.puter && window.puter.ai) {
+          clearInterval(checkPuter);
+          resolve(window.puter);
+        }
+      }, 100);
+
+      setTimeout(() => {
+        clearInterval(checkPuter);
+        reject(new Error('Puter.js failed to load'));
+      }, 10000);
+    };
+    script.onerror = () => reject(new Error('Failed to load Puter.js'));
+    document.head.appendChild(script);
+  });
 }
 
 export class TranslationService {
@@ -199,6 +225,10 @@ export class TranslationService {
   }
 
   async translate(text, targetLanguage, sourceLanguage = 'en') {
+    if (isExternalApi(this.currentModelId)) {
+      return await this._translateWithPuter(text, targetLanguage, sourceLanguage);
+    }
+
     if (!this.pipeline) {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
@@ -314,40 +344,67 @@ export class TranslationService {
     }
   }
 
-  async _translateWithPrompt(text, targetLanguage, sourceLanguage) {
-    const prompt = getPromptForModel(this.currentModelId, sourceLanguage, targetLanguage, text);
+  async _translateWithPuter(text, targetLanguage, sourceLanguage = 'en') {
+    const modelId = this.currentModelId.replace('puter:', '');
+    const targetLangName = getLanguageName(targetLanguage) || targetLanguage;
+    const sourceLangName = getLanguageName(sourceLanguage) || sourceLanguage;
 
-    console.log('[DEBUG] Prompt-based translation:', {
-      model: this.currentModelId,
-      targetLang: targetLanguage,
-      promptLength: prompt.length
+    console.log('[DEBUG] Puter AI translation:', {
+      model: modelId,
+      source: sourceLangName,
+      target: targetLangName,
+      textLength: text.length
     });
 
     try {
       const startTime = performance.now();
 
-      const result = await this.pipeline(prompt, {
-        max_new_tokens: 1024,
-        temperature: 0.1,
-        do_sample: false
+      let puter = null;
+      try {
+        puter = await loadPuterScript();
+      } catch (scriptError) {
+        throw new Error('Failed to load Puter.js: ' + scriptError.message);
+      }
+
+      const prompt = `Translate the following text from ${sourceLangName} to ${targetLangName}. Output only the translated text—no explanations, comments, or additional notes:\n\n${text}`;
+
+      const result = await puter.ai.chat(prompt, {
+        model: modelId
       });
 
       const duration = performance.now() - startTime;
-      console.log('[DEBUG] Prompt pipeline returned in', duration.toFixed(0), 'ms');
+      console.log('[DEBUG] Puter AI raw result:', result, 'type:', typeof result);
+      log('Puter AI translation complete in', duration.toFixed(0), 'ms');
 
-      const generatedText = result[0]?.generated_text || result.generated_text || '';
-      log('LLM translation complete in', duration.toFixed(0), 'ms');
+      let resultText = result;
+      if (typeof result !== 'string') {
+        if (result.message) {
+          resultText = result.message.content || result.message;
+        } else if (result.text) {
+          resultText = result.text;
+        } else if (result.content) {
+          resultText = result.content;
+        } else {
+          resultText = JSON.stringify(result);
+        }
+      }
+      console.log('[DEBUG] Puter AI resultText:', resultText, 'type:', typeof resultText);
 
-      const translation = generatedText.split('Translation:').pop()?.trim() || generatedText.trim();
+      if (resultText == null) {
+        throw new Error('Empty response from Puter AI');
+      }
 
-      return translation;
+      return String(resultText).trim();
     } catch (error) {
-      console.error('[Translation] Error during prompt-based translation:', error);
+      console.error('[Translation] Error during Puter AI translation:', error);
       throw error;
     }
   }
 
   isReady() {
+    if (isExternalApi(this.currentModelId)) {
+      return true;
+    }
     return this.pipeline !== null && !this.isLoading;
   }
 
