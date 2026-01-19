@@ -67,6 +67,22 @@ export const MODELS = [
     ]
   },
   {
+    family: 'translategemma',
+    name: 'TranslateGemma (55 languages)',
+    variants: [
+      {
+        id: '4b',
+        name: '4B (~5GB)',
+        modelId: 'google/translategemma-4b-it',
+        description: "Google's new state-of-the-art translation model (requires HF login, works with WASM)",
+        task: 'text-generation',
+        usePrompt: true,
+        requiresWebGPU: false,
+        requiresHFAuth: true
+      }
+    ]
+  },
+  {
     family: 'puter',
     name: 'Puter AI (External API)',
     variants: [
@@ -133,6 +149,15 @@ export function modelRequiresWebGPU(modelId) {
   return model?.requiresWebGPU === true;
 }
 
+export function modelRequiresHFAuth(modelId) {
+  const model = getModelById(modelId);
+  return model?.requiresHFAuth === true;
+}
+
+export function getHuggingFaceToken() {
+  return localStorage.getItem('hf_token') || '';
+}
+
 export function modelUsesPrompt(modelId) {
   const model = getModelById(modelId);
   return model?.usePrompt === true;
@@ -150,6 +175,9 @@ export function getExternalModelName(modelId) {
 
 export function getModelTask(modelId) {
   const model = getModelById(modelId);
+  if (isTranslateGemmaModel(modelId)) {
+    return 'text-generation';
+  }
   if (model?.usePrompt) {
     return 'text-generation';
   }
@@ -168,6 +196,26 @@ Translate this:
 ${text}
 
 Translation:`;
+}
+
+export function getTranslateGemmaMessages(sourceLang, targetLang, text) {
+  return [
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          source_lang_code: sourceLang,
+          target_lang_code: targetLang,
+          text: text
+        }
+      ]
+    }
+  ];
+}
+
+export function isTranslateGemmaModel(modelId) {
+  return modelId.includes('translategemma');
 }
 
 export function getLanguageCode(name) {

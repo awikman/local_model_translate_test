@@ -1,5 +1,5 @@
 import { log, startTimer, endTimer } from '../../utils/logger.js';
-import { modelUsesPrompt, getPromptForModel, getModelTask, isExternalApi, getLanguageName } from '../../utils/models.js';
+import { modelUsesPrompt, getPromptForModel, getModelTask, isExternalApi, getLanguageName, isTranslateGemmaModel, getTranslateGemmaMessages, modelRequiresWebGPU, modelRequiresHFAuth, getHuggingFaceToken } from '../../utils/models.js';
 
 const NLLB_LANGUAGE_CODES = {
   'en': 'eng_Latn',
@@ -148,16 +148,28 @@ export class TranslationService {
       const task = getModelTask(modelId);
       log('Loading pipeline with task:', task);
 
-      // Use auto-detection (let transformers.js decide)
-      // Don't explicitly set device - let it use what works
-      this.pipeline = await pipeline(task, modelId, {
+      // Build pipeline options
+      const pipelineOptions = {
         progress_callback: (progress) => {
           if (this.progressCallback) {
             const percentage = this._calculateOverallProgress(progress);
             this.progressCallback(percentage, progress);
           }
         }
-      });
+      };
+
+      // Add HF token if model requires auth
+      if (modelRequiresHFAuth(modelId)) {
+        const token = getHuggingFaceToken();
+        if (token) {
+          // Token is handled by fetch interceptor in index.html
+          log('Using HF token (fetch interceptor)');
+        }
+      }
+
+      // Use auto-detection (let transformers.js decide)
+      // Don't explicitly set device - let it use what works
+      this.pipeline = await pipeline(task, modelId, pipelineOptions);
 
       if (this.progressCallback) {
         this.progressCallback(100, { status: 'ready', name: modelId });
@@ -174,6 +186,26 @@ export class TranslationService {
       this.isLoading = false;
       const errorMessage = error.message || String(error);
       console.error('[Translation] Error loading model:', errorMessage);
+
+      // Check if HF auth is required
+      const needsHFAuth = errorMessage.includes('401') || 
+                          errorMessage.includes('Unauthorized') ||
+                          errorMessage.includes('login') ||
+                          errorMessage.includes('accept the license');
+
+      if (needsHFAuth) {
+        const hasToken = !!getHuggingFaceToken();
+        if (hasToken) {
+          // Clear the token from env since it didn't work
+          if (window.updateHfToken) {
+            window.updateHfToken(undefined);
+          }
+          throw new Error('Model access denied. Your HF token may be invalid or expired.');
+        }
+        throw new Error('This model requires a Hugging Face account. ' +
+                        'Please log in at huggingface.co and accept the model license. ' +
+                        'Then enter your HF token in the settings.');
+      }
 
       // Check if WebGPU might be enabled but failing
       const hasWebGPU = isWebGPUAvailable();
@@ -194,7 +226,10 @@ export class TranslationService {
       log('Trying WASM fallback...');
 
       try {
-        this.pipeline = await pipeline('translation', modelId, {
+        const wasmTask = getModelTask(modelId);
+        log('WASM fallback task:', wasmTask);
+
+        this.pipeline = await pipeline(wasmTask, modelId, {
           progress_callback: (progress) => {
             if (this.progressCallback) {
               const percentage = this._calculateOverallProgress(progress);
@@ -218,7 +253,15 @@ export class TranslationService {
         return this.pipeline;
       } catch (wasmError) {
         this.isLoading = false;
-        console.error('[Translation] WASM fallback failed:', wasmError);
+        const wasmErrorMessage = wasmError.message || String(wasmError);
+        
+        // Check if model requires WebGPU
+        if (modelRequiresWebGPU(modelId)) {
+          console.error('[Translation] WebGPU required but failed:', wasmErrorMessage);
+          throw new Error('This model requires WebGPU. Please use Chrome/Edge with WebGPU enabled.');
+        }
+        
+        console.error('[Translation] WASM fallback failed:', wasmErrorMessage);
         throw new Error('Model load failed. Clear cache and try again, or use Chrome/Edge.');
       }
     }
@@ -231,6 +274,10 @@ export class TranslationService {
 
     if (!this.pipeline) {
       throw new Error('Model not loaded. Call loadModel() first.');
+    }
+
+    if (isTranslateGemmaModel(this.currentModelId)) {
+      return await this._translateWithTranslateGemma(text, targetLanguage, sourceLanguage);
     }
 
     const usePromptModel = modelUsesPrompt(this.currentModelId);
@@ -298,6 +345,40 @@ export class TranslationService {
       return translation;
     } catch (error) {
       console.error('[Translation] Error during prompt-based translation:', error);
+      throw error;
+    }
+  }
+
+  async _translateWithTranslateGemma(text, targetLanguage, sourceLanguage) {
+    const messages = getTranslateGemmaMessages(sourceLanguage, targetLanguage, text);
+
+    console.log('[DEBUG] TranslateGemma translation:', {
+      model: this.currentModelId,
+      sourceLang: sourceLanguage,
+      targetLang: targetLanguage,
+      textLength: text.length
+    });
+
+    try {
+      const startTime = performance.now();
+
+      const result = await this.pipeline(messages, {
+        max_new_tokens: 1024,
+        temperature: 0.1,
+        do_sample: false
+      });
+
+      const duration = performance.now() - startTime;
+      console.log('[DEBUG] TranslateGemma pipeline returned in', duration.toFixed(0), 'ms');
+
+      const generatedText = result[0]?.generated_text || result.generated_text || '';
+      log('TranslateGemma translation complete in', duration.toFixed(0), 'ms');
+
+      const translation = generatedText.trim();
+
+      return translation;
+    } catch (error) {
+      console.error('[Translation] Error during TranslateGemma translation:', error);
       throw error;
     }
   }

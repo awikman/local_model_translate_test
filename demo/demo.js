@@ -499,6 +499,40 @@ function updateExternalApiWarning(modelId) {
     loadModelButton.disabled = false;
     loadModelButton.textContent = 'Load Model';
   }
+
+  // HF Token handler
+  const hfTokenInput = document.getElementById('hf-token');
+  const saveHfTokenButton = document.getElementById('save-hf-token');
+
+  if (hfTokenInput && saveHfTokenButton) {
+    // Load saved token
+    const savedToken = localStorage.getItem('hf_token');
+    if (savedToken) {
+      hfTokenInput.value = savedToken;
+      // Update env with saved token
+      if (window.updateHfToken) {
+        window.updateHfToken(savedToken);
+      }
+    }
+
+    saveHfTokenButton.addEventListener('click', () => {
+      const token = hfTokenInput.value.trim();
+      if (token) {
+        localStorage.setItem('hf_token', token);
+        // Update env with new token
+        if (window.updateHfToken) {
+          window.updateHfToken(token);
+        }
+        updateStatus('Token saved. Reload and try loading the model again.', 'success');
+      } else {
+        localStorage.removeItem('hf_token');
+        if (window.updateHfToken) {
+          window.updateHfToken(undefined);
+        }
+        updateStatus('Token cleared.', 'info');
+      }
+    });
+  }
 }
 
 async function changeModel(modelId) {

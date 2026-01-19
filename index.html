@@ -33,6 +33,36 @@
     env.allowRemoteModels = true;
     env.allowLocalModels = false;
 
+    // Monkey-patch fetch to include HF token for Hugging Face requests
+    const originalFetch = window.__originalFetch || window.fetch;
+    window.__originalFetch = originalFetch;
+
+    let hfToken = null;
+
+    window.fetch = function(url, options) {
+      if (typeof url === 'string' && url.includes('huggingface.co') && hfToken) {
+        const headers = new Headers(options?.headers || {});
+        headers.set('Authorization', `Bearer ${hfToken}`);
+        return originalFetch(url, {
+          ...options,
+          headers
+        });
+      }
+      return originalFetch(url, options);
+    };
+
+    // Set up token update listener
+    window.updateHfToken = function(token) {
+      hfToken = token;
+      if (token) {
+        env.HF_TOKEN = token;
+        console.log('[DEBUG] HF_TOKEN set:', token.substring(0, 10) + '...');
+      } else {
+        env.HF_TOKEN = undefined;
+        console.log('[DEBUG] HF_TOKEN cleared');
+      }
+    };
+
     window.transformersPipeline = pipeline;
     window.transformersEnv = env;
 
@@ -173,6 +203,13 @@
         <label>Custom Model:</label>
         <input type="text" id="custom-model" placeholder="e.g., Xenova/mymodel">
         <button id="apply-custom-model" class="secondary">Apply Custom</button>
+      </div>
+
+      <div class="setting-group">
+        <label for="hf-token">Hugging Face Token:</label>
+        <input type="password" id="hf-token" placeholder="hf_...">
+        <button id="save-hf-token" class="secondary">Save Token</button>
+        <small style="color: #666; font-size: 11px;">Required for gated models like TranslateGemma</small>
       </div>
 
       <div class="setting-group status-section">
