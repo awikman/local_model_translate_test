@@ -4,7 +4,7 @@ Vibe code demo. Nothing to see here, just playing around...
 
 This demo got its inspiration from ckeditor translation module, that calls the OpenAI API to do the translations. What if we just ran the in the users browser? No need for API keys.
 
-live demo should be available at https://ai.wikman.es/ or https://awikman.github.io/local_model_translate_test/
+live demo should be available at https://awikman.github.io/local_model_translate_test/
 
 ## What This Is
 
